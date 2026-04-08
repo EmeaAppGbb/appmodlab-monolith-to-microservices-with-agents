@@ -1,0 +1,393 @@
+/* ============================================================
+   EduVerse Academy – Custom Stylesheet
+   Complements Bootstrap 4.5.2 + FontAwesome 5.15.4
+   ============================================================ */
+
+/* ----- Brand palette ----- */
+:root {
+    --ev-primary:   #667eea;
+    --ev-secondary: #764ba2;
+    --ev-accent:    #f7971e;
+    --ev-success:   #28a745;
+    --ev-danger:    #dc3545;
+    --ev-dark:      #2d3436;
+    --ev-light-bg:  #f8f9fd;
+    --ev-card-shadow: 0 4px 12px rgba(0, 0, 0, .08);
+    --ev-radius:    .5rem;
+}
+
+/* ----- Global overrides ----- */
+body {
+    font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background-color: var(--ev-light-bg);
+    color: #333;
+}
+
+a {
+    color: var(--ev-primary);
+    transition: color .2s;
+}
+a:hover { color: var(--ev-secondary); text-decoration: none; }
+
+/* ----- Navbar tweaks ----- */
+.navbar-brand i { margin-right: .35rem; }
+
+.navbar-dark .nav-link {
+    transition: color .2s;
+}
+.navbar-dark .nav-link:hover,
+.navbar-dark .nav-link:focus {
+    color: var(--ev-accent) !important;
+}
+
+/* ----- Hero section ----- */
+.hero-section {
+    background: linear-gradient(135deg, var(--ev-primary) 0%, var(--ev-secondary) 100%);
+    color: #fff;
+    padding: 80px 0;
+    text-align: center;
+}
+.hero-section h1 { font-weight: 700; }
+.hero-section p.lead { max-width: 620px; margin: 0 auto; }
+
+/* ----- Section headings ----- */
+.section-title {
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    position: relative;
+    display: inline-block;
+}
+.section-title::after {
+    content: '';
+    display: block;
+    width: 50%;
+    height: 3px;
+    background: var(--ev-primary);
+    margin-top: .35rem;
+    border-radius: 2px;
+}
+
+/* ----- Cards ----- */
+.card {
+    border: none;
+    border-radius: var(--ev-radius);
+    box-shadow: var(--ev-card-shadow);
+    transition: transform .25s, box-shadow .25s;
+    overflow: hidden;
+}
+.card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .12);
+}
+
+.card-header {
+    background: #fff;
+    border-bottom: 1px solid #eee;
+    font-weight: 600;
+}
+
+/* ----- Course thumbnail placeholder ----- */
+.card-img-top,
+.course-thumbnail {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+    background-color: #e0e5ec;
+}
+
+.course-thumbnail-placeholder {
+    width: 100%;
+    height: 180px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+    color: #fff;
+}
+.course-thumbnail-placeholder.bg-primary   { background: var(--ev-primary)   !important; }
+.course-thumbnail-placeholder.bg-secondary { background: var(--ev-secondary) !important; }
+.course-thumbnail-placeholder.bg-info      { background: #17a2b8 !important; }
+.course-thumbnail-placeholder.bg-success   { background: var(--ev-success)   !important; }
+.course-thumbnail-placeholder.bg-warning   { background: var(--ev-accent)    !important; }
+
+/* ----- Course card specifics ----- */
+.course-card .card-body { padding: 1.25rem; }
+.course-card .card-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.course-card .card-text {
+    font-size: .9rem;
+    color: #666;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+.course-card .card-footer {
+    background: #fff;
+    border-top: 1px solid #eee;
+    font-size: .85rem;
+}
+.course-price {
+    font-weight: 700;
+    font-size: 1.15rem;
+    color: var(--ev-primary);
+}
+.course-meta {
+    font-size: .85rem;
+    color: #888;
+}
+.course-meta i { margin-right: .25rem; }
+
+/* ----- Badges ----- */
+.badge { font-weight: 500; letter-spacing: .02em; }
+.badge-draft     { background-color: #ffc107; color: #333; }
+.badge-published { background-color: var(--ev-success); }
+.badge-archived  { background-color: #6c757d; }
+
+/* ----- Progress bars ----- */
+.progress {
+    height: 10px;
+    border-radius: 5px;
+    background-color: #e9ecef;
+    overflow: hidden;
+}
+.progress-bar {
+    border-radius: 5px;
+    transition: width .6s ease;
+}
+.progress-bar.bg-eduverse {
+    background: linear-gradient(90deg, var(--ev-primary), var(--ev-secondary));
+}
+
+.progress-label {
+    font-size: .8rem;
+    font-weight: 600;
+    color: #555;
+    margin-bottom: .25rem;
+}
+
+/* ----- Stat / summary cards (dashboards) ----- */
+.stat-card {
+    border-radius: var(--ev-radius);
+    color: #fff;
+    padding: 1.5rem;
+    text-align: center;
+    box-shadow: var(--ev-card-shadow);
+}
+.stat-card .stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+}
+.stat-card .stat-label {
+    font-size: .85rem;
+    opacity: .85;
+    margin-top: .25rem;
+}
+.stat-card i { font-size: 1.5rem; margin-bottom: .5rem; }
+
+/* ----- Video player wrapper ----- */
+.video-player-wrapper {
+    position: relative;
+    width: 100%;
+    padding-top: 56.25%; /* 16:9 */
+    background: #000;
+    border-radius: var(--ev-radius);
+    overflow: hidden;
+}
+.video-player-wrapper video,
+.video-player-wrapper iframe {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+}
+
+.video-controls {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    padding: .5rem 1rem;
+    background: var(--ev-dark);
+    color: #fff;
+    border-radius: 0 0 var(--ev-radius) var(--ev-radius);
+}
+.video-controls button {
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 1rem;
+    cursor: pointer;
+    padding: .25rem .5rem;
+    transition: color .2s;
+}
+.video-controls button:hover { color: var(--ev-accent); }
+.video-controls input[type="range"] { flex: 1; }
+
+/* ----- Assessment / quiz styles ----- */
+.assessment-question {
+    background: #fff;
+    border-radius: var(--ev-radius);
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, .05);
+}
+.assessment-question h6 { font-weight: 600; }
+
+.assessment-question .form-check {
+    padding: .5rem 0 .5rem 1.75rem;
+}
+.assessment-question .form-check-label {
+    cursor: pointer;
+}
+
+.assessment-timer {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--ev-danger);
+    text-align: center;
+    padding: .5rem;
+}
+.assessment-timer i { margin-right: .35rem; }
+
+/* ----- Accordion (module/lesson lists) ----- */
+.accordion .card {
+    box-shadow: none;
+    border: 1px solid #e9ecef;
+    border-radius: 0;
+    margin-bottom: -1px;
+}
+.accordion .card:first-child { border-radius: var(--ev-radius) var(--ev-radius) 0 0; }
+.accordion .card:last-child  { border-radius: 0 0 var(--ev-radius) var(--ev-radius); }
+
+.accordion .card-header {
+    padding: .75rem 1.25rem;
+    cursor: pointer;
+    user-select: none;
+}
+.accordion .card-header:hover { background: #f8f9fa; }
+
+.lesson-item {
+    display: flex;
+    align-items: center;
+    padding: .65rem 0;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: .95rem;
+}
+.lesson-item:last-child { border-bottom: none; }
+.lesson-item i { width: 24px; text-align: center; color: var(--ev-primary); margin-right: .5rem; }
+.lesson-item .lesson-duration { margin-left: auto; color: #999; font-size: .8rem; }
+
+/* ----- Sidebar (course detail) ----- */
+.course-sidebar {
+    position: sticky;
+    top: 80px;
+}
+.course-sidebar .card { border: 2px solid var(--ev-primary); }
+
+/* ----- Certificate preview ----- */
+.certificate-preview {
+    border: 4px double var(--ev-primary);
+    border-radius: var(--ev-radius);
+    padding: 2rem;
+    text-align: center;
+    background: #fffdf5;
+}
+.certificate-preview h3 { color: var(--ev-secondary); font-weight: 700; }
+.certificate-preview .cert-number { font-family: monospace; color: #888; }
+
+/* ----- Payment form ----- */
+.payment-summary {
+    background: #fff;
+    border-radius: var(--ev-radius);
+    box-shadow: var(--ev-card-shadow);
+    padding: 1.5rem;
+}
+.payment-summary .total-amount {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--ev-primary);
+}
+
+/* ----- Notification badges ----- */
+.notification-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--ev-danger);
+    display: inline-block;
+    margin-left: .25rem;
+    vertical-align: super;
+}
+
+/* ----- Breadcrumbs ----- */
+.breadcrumb {
+    background: transparent;
+    padding: .5rem 0;
+    font-size: .9rem;
+}
+.breadcrumb-item + .breadcrumb-item::before { color: #aaa; }
+
+/* ----- Login page ----- */
+.login-card {
+    max-width: 420px;
+    margin: 3rem auto;
+}
+
+/* ----- Tables ----- */
+.table thead th {
+    border-top: none;
+    font-size: .85rem;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: #777;
+}
+
+/* ----- Buttons ----- */
+.btn-eduverse {
+    background: linear-gradient(135deg, var(--ev-primary), var(--ev-secondary));
+    color: #fff;
+    border: none;
+    border-radius: var(--ev-radius);
+    padding: .5rem 1.5rem;
+    font-weight: 600;
+    transition: opacity .2s, box-shadow .2s;
+}
+.btn-eduverse:hover {
+    color: #fff;
+    opacity: .9;
+    box-shadow: 0 4px 14px rgba(102, 126, 234, .4);
+}
+
+/* ----- Footer ----- */
+.footer a { transition: color .2s; }
+.footer a:hover { color: var(--ev-accent) !important; }
+
+/* ----- Loading spinner ----- */
+.spinner-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(255, 255, 255, .7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+/* ----- Empty state ----- */
+.empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #aaa;
+}
+.empty-state i { font-size: 3rem; margin-bottom: 1rem; display: block; }
+
+/* ----- Responsive tweaks ----- */
+@media (max-width: 768px) {
+    .hero-section { padding: 50px 0; }
+    .hero-section h1 { font-size: 1.75rem; }
+    .stat-card .stat-value { font-size: 1.5rem; }
+    .course-sidebar { position: static; margin-top: 1.5rem; }
+}

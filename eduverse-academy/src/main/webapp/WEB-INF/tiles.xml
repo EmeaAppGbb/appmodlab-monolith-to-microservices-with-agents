@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE tiles-definitions PUBLIC
+        "-//Apache Software Foundation//DTD Tiles Configuration 3.0//EN"
+        "http://tiles.apache.org/dtds/tiles-config_3_0.dtd">
+
+<tiles-definitions>
+
+    <!-- Base layout template -->
+    <definition name="base" template="/WEB-INF/views/layout.jsp">
+        <put-attribute name="title" value="EduVerse Academy" />
+        <put-attribute name="body" value="" />
+    </definition>
+
+    <!-- Home page -->
+    <definition name="home" extends="base">
+        <put-attribute name="title" value="Home - EduVerse Academy" />
+        <put-attribute name="body" value="/WEB-INF/views/home.jsp" />
+    </definition>
+
+    <!-- Login page -->
+    <definition name="login" extends="base">
+        <put-attribute name="title" value="Sign In - EduVerse Academy" />
+        <put-attribute name="body" value="/WEB-INF/views/login.jsp" />
+    </definition>
+
+    <!-- Course catalog -->
+    <definition name="catalog" extends="base">
+        <put-attribute name="title" value="Course Catalog - EduVerse Academy" />
+        <put-attribute name="body" value="/WEB-INF/views/catalog.jsp" />
+    </definition>
+
+    <!-- Course detail view -->
+    <definition name="courseDetail" extends="base">
+        <put-attribute name="title" value="Course Details - EduVerse Academy" />
+        <put-attribute name="body" value="/WEB-INF/views/course-view.jsp" />
+    </definition>
+
+    <!-- Course edit form -->
+    <definition name="courseEdit" extends="base">
+        <put-attribute name="title" value="Edit Course - EduVerse Academy" />
+        <put-attribute name="body" value="/WEB-INF/views/course-edit.jsp" />
+    </definition>
+
+    <!-- Student enrolled courses -->
+    <definition name="studentEnrollments" extends="base">
+        <put-attribute name="title" value="My Courses - EduVerse Academy" />
+        <put-attribute name="body" value="/WEB-INF/views/student-enrollments.jsp" />
+    </definition>
+
+    <!-- Student course learning view -->
+    <definition name="courseLearning" extends="base">
+        <put-attribute name="title" value="Course Learning - EduVerse Academy" />
+        <put-attribute name="body" value="/WEB-INF/views/student-course.jsp" />
+    </definition>
+
+    <!-- Assessment view -->
+    <definition name="assessmentDetail" extends="base">
+        <put-attribute name="title" value="Assessment - EduVerse Academy" />
+        <put-attribute name="body" value="/WEB-INF/views/assessment-view.jsp" />
+    </definition>
+
+    <!-- Assessment results -->
+    <definition name="assessmentResults" extends="base">
+        <put-attribute name="title" value="Assessment Results - EduVerse Academy" />
+        <put-attribute name="body" value="/WEB-INF/views/assessment-results.jsp" />
+    </definition>
+
+    <!-- Instructor dashboard -->
+    <definition name="instructorDashboard" extends="base">
+        <put-attribute name="title" value="Instructor Dashboard - EduVerse Academy" />
+        <put-attribute name="body" value="/WEB-INF/views/instructor-dashboard.jsp" />
+    </definition>
+
+    <!-- Admin dashboard -->
+    <definition name="adminDashboard" extends="base">
+        <put-attribute name="title" value="Admin Dashboard - EduVerse Academy" />
+        <put-attribute name="body" value="/WEB-INF/views/admin-dashboard.jsp" />
+    </definition>
+
+    <!-- Certificate view -->
+    <definition name="certificateView" extends="base">
+        <put-attribute name="title" value="Certificate - EduVerse Academy" />
+        <put-attribute name="body" value="/WEB-INF/views/certificate-view.jsp" />
+    </definition>
+
+    <!-- Payment checkout -->
+    <definition name="paymentCheckout" extends="base">
+        <put-attribute name="title" value="Checkout - EduVerse Academy" />
+        <put-attribute name="body" value="/WEB-INF/views/payment-checkout.jsp" />
+    </definition>
+
+    <!-- Error page -->
+    <definition name="error" extends="base">
+        <put-attribute name="title" value="Error - EduVerse Academy" />
+        <put-attribute name="body" value="/WEB-INF/views/error.jsp" />
+    </definition>
+
+</tiles-definitions>
