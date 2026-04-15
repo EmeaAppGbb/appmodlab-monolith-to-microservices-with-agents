@@ -102,11 +102,11 @@ public class VideoService {
             video.setTranscodedUrls(transcodedUrls);
             video.setThumbnailUrl(VIDEO_CDN_BASE_URL + videoId + "/thumbnail.jpg");
             video.setStatus(Video.Status.READY);
-            video = videoRepository.save(video);
+            Video savedVideo = videoRepository.save(video);
 
             // MONOLITH ANTI-PATTERN: Update lesson with CDN URL after processing
-            Lesson lesson = lessonRepository.findById(video.getLessonId())
-                    .orElseThrow(() -> new RuntimeException("Lesson not found: " + video.getLessonId()));
+            Lesson lesson = lessonRepository.findById(savedVideo.getLessonId())
+                    .orElseThrow(() -> new RuntimeException("Lesson not found: " + savedVideo.getLessonId()));
             lesson.setVideoUrl(VIDEO_CDN_BASE_URL + videoId + "/720p.mp4");
             lessonRepository.save(lesson);
 

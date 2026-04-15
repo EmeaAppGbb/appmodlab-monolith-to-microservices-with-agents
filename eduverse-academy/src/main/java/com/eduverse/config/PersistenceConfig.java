@@ -30,9 +30,16 @@ public class PersistenceConfig {
     public DataSource dataSource() {
         HikariDataSource dataSource = new HikariDataSource();
         dataSource.setDriverClassName("org.postgresql.Driver");
-        dataSource.setJdbcUrl(env.getProperty("db.url", "jdbc:postgresql://localhost:5432/eduverse"));
-        dataSource.setUsername(env.getProperty("db.username", "postgres"));
-        dataSource.setPassword(env.getProperty("db.password", "postgres"));
+        // Check JDBC_URL env var first (Docker), then db.url property, then default
+        String jdbcUrl = System.getenv("JDBC_URL");
+        if (jdbcUrl == null || jdbcUrl.isEmpty()) {
+            jdbcUrl = env.getProperty("db.url", "jdbc:postgresql://localhost:5432/eduverse");
+        }
+        dataSource.setJdbcUrl(jdbcUrl);
+        String username = System.getenv("DB_USERNAME");
+        dataSource.setUsername(username != null ? username : env.getProperty("db.username", "postgres"));
+        String password = System.getenv("DB_PASSWORD");
+        dataSource.setPassword(password != null ? password : env.getProperty("db.password", "postgres"));
         dataSource.setMaximumPoolSize(10);
         dataSource.setMinimumIdle(2);
         dataSource.setIdleTimeout(30000);

@@ -119,21 +119,21 @@ public class AssessmentService {
         answer.setFeedback(feedback);
         answer.setGradedBy(gradedBy);
 
-        answer = studentAnswerRepository.save(answer);
+        StudentAnswer savedAnswer = studentAnswerRepository.save(answer);
 
         // Check if the student passed and update progress
-        Assessment assessment = assessmentRepository.findById(answer.getAssessmentId())
-                .orElseThrow(() -> new RuntimeException("Assessment not found: " + answer.getAssessmentId()));
+        Assessment assessment = assessmentRepository.findById(savedAnswer.getAssessmentId())
+                .orElseThrow(() -> new RuntimeException("Assessment not found: " + savedAnswer.getAssessmentId()));
 
         if (assessment.getPassingScore() != null && score >= assessment.getPassingScore()) {
             logger.info("Student {} passed assessment {} via manual grading",
-                    answer.getStudentId(), assessment.getId());
+                    savedAnswer.getStudentId(), assessment.getId());
 
             // MONOLITH ANTI-PATTERN: Same cross-domain progress update in manual grading path
-            updateProgressOnPass(answer.getStudentId(), assessment.getLessonId());
+            updateProgressOnPass(savedAnswer.getStudentId(), assessment.getLessonId());
         }
 
-        return answer;
+        return savedAnswer;
     }
 
     /**

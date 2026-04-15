@@ -199,7 +199,7 @@ public class EnrollmentService {
 
         enrollment.setStatus(Enrollment.Status.COMPLETED);
         enrollment.setCompletionDate(LocalDateTime.now());
-        enrollment = enrollmentRepository.save(enrollment);
+        Enrollment savedEnrollment = enrollmentRepository.save(enrollment);
         logger.info("Enrollment {} marked as COMPLETED", enrollmentId);
 
         // Generate certificate — cross-domain call to CertificateService
@@ -208,13 +208,13 @@ public class EnrollmentService {
                 certificate.getCertificateNumber(), enrollmentId);
 
         // Fetch course name for notification — reaching into course domain again
-        Course course = courseRepository.findById(enrollment.getCourseId())
-                .orElseThrow(() -> new RuntimeException("Course not found: " + enrollment.getCourseId()));
+        Course course = courseRepository.findById(savedEnrollment.getCourseId())
+                .orElseThrow(() -> new RuntimeException("Course not found: " + savedEnrollment.getCourseId()));
 
         // Send certificate notification — synchronous email in completion transaction
         try {
             notificationService.sendCertificateIssued(
-                    enrollment.getStudentId(),
+                    savedEnrollment.getStudentId(),
                     course.getTitle(),
                     certificate.getCertificateNumber()
             );
@@ -223,6 +223,6 @@ public class EnrollmentService {
                     enrollmentId, e.getMessage());
         }
 
-        return enrollment;
+        return savedEnrollment;
     }
 }
