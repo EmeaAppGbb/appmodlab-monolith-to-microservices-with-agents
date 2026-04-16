@@ -27,6 +27,7 @@ services:
       - "8090:8090"
     environment:
       MONOLITH_URL: http://eduverse-app:8080
+      NOTIFICATION_SERVICE_URL: http://eduverse-notification-service:8084
       SPRING_PROFILES_ACTIVE: docker
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8090/actuator/health || exit 1"]
@@ -36,3 +37,57 @@ services:
       start_period: 30s
     networks:
       - eduverse-net
+
+  # ---------- Notification Service Database ----------
+  notification-db:
+    image: postgres:14
+    container_name: eduverse-notification-db
+    environment:
+      POSTGRES_DB: notifications
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5433:5432"
+    volumes:
+      - notification-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d notifications"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - eduverse-net
+
+  # ---------- Notification Service (Strangler Fig — Phase 1) ----------
+  notification-service:
+    build:
+      context: ../notification-service
+      dockerfile: Dockerfile
+    container_name: eduverse-notification-service
+    depends_on:
+      notification-db:
+        condition: service_healthy
+    ports:
+      - "8084:8084"
+    environment:
+      DB_URL: jdbc:postgresql://notification-db:5432/notifications
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      MAIL_HOST: ${MAIL_HOST:-smtp.eduverse.com}
+      MAIL_PORT: ${MAIL_PORT:-587}
+      MAIL_USERNAME: ${MAIL_USERNAME:-notifications@eduverse.com}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-changeme}
+      SERVICEBUS_CONNECTION_STRING: ${SERVICEBUS_CONNECTION_STRING:-}
+      SERVER_PORT: 8084
+      SPRING_PROFILES_ACTIVE: docker
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8084/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - eduverse-net
+
+volumes:
+  notification-pgdata:

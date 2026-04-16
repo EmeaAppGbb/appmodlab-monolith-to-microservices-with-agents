@@ -1,0 +1,76 @@
+spring:
+  application:
+    name: notification-service
+
+  # Database — own PostgreSQL database (Database-per-Service pattern)
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5433/notifications}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:db/schema.sql
+
+  # Spring Mail configuration
+  mail:
+    host: ${MAIL_HOST:smtp.eduverse.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:notifications@eduverse.com}
+    password: ${MAIL_PASSWORD:changeme}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+        transport:
+          protocol: smtp
+
+  # Azure Service Bus (disabled by default for local dev)
+  cloud:
+    azure:
+      servicebus:
+        connection-string: ${SERVICEBUS_CONNECTION_STRING:}
+        processor:
+          student-enrolled:
+            entity-name: student-enrolled
+            entity-type: topic
+            subscription-name: notification-service
+          payment-completed:
+            entity-name: payment-completed
+            entity-type: topic
+            subscription-name: notification-service
+          certificate-issued:
+            entity-name: certificate-issued
+            entity-type: topic
+            subscription-name: notification-service
+
+server:
+  port: ${SERVER_PORT:8084}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when-authorized
+
+logging:
+  level:
+    com.eduverse.notification: DEBUG
+    org.springframework.mail: INFO
+    com.azure.spring: INFO

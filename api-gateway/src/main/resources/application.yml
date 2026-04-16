@@ -84,9 +84,9 @@ spring:
             target-service: payment-service
             description: "Payment processing and history APIs"
 
-        # Notification routes
+        # Notification routes — Strangler Fig: routed to extracted notification-service
         - id: notifications
-          uri: ${MONOLITH_URL:http://localhost:8080}
+          uri: ${NOTIFICATION_SERVICE_URL:http://localhost:8084}
           predicates:
             - Path=/api/notifications/**
           filters:
@@ -94,7 +94,7 @@ spring:
           metadata:
             feature-flag: ff-notification-service
             target-service: notification-service
-            description: "Notification management APIs"
+            description: "Notification management APIs (extracted microservice)"
 
         # Student Progress routes
         - id: progress
