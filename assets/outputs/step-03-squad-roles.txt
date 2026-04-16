@@ -1,0 +1,45 @@
+
+­ƒôª Built-in Roles (20 base roles)
+   Adapted from agency-agents by AgentLand Contributors (MIT)
+
+  Software Development:
+    ­ƒÅù´©Å lead       Lead / Architect      "Designs systems that survive the team that built them. Every decision has a trade-off ÔÇö name it."
+    ÔÜø´©Å  frontend   Frontend Developer    "Builds responsive, accessible web apps with pixel-perfect precision."
+    ­ƒöº  backend    Backend Developer     "Designs the systems that hold everything up ÔÇö databases, APIs, cloud, scale."
+    ­ƒÆ╗  fullstack  Full-Stack Developer  "Sees the full picture ÔÇö from the database to the pixel."
+    ­ƒæü´©Å reviewer   Code Reviewer         "Reviews code like a mentor, not a gatekeeper. Every comment teaches something."
+    ­ƒº¬  tester     Test Engineer         "Breaks your API before your users do."
+    ­ƒöÆ  security   Security Engineer     "Models threats, reviews code, and designs security architecture that actually holds."
+    ­ƒôè  data       Data Engineer         "Thinks in tables and queries. Normalizes first, denormalizes when the numbers demand it."
+    ­ƒñû  ai         AI / ML Engineer      "Builds intelligent systems that learn, reason, and adapt."
+
+  Business & Operations:
+    ÔÜÖ´©Å  devops                DevOps Engineer       "Automates infrastructure so your team ships faster and sleeps better."
+    ­ƒôØ  docs                  Technical Writer      "Turns complexity into clarity. If the docs are wrong, the product is wrong."
+    ­ƒÄ¿  designer              UI/UX Designer        "Pixel-aware and user-obsessed. If it looks off by one, it is off by one."
+    ­ƒôú  marketing-strategist  Marketing Strategist  "Drives growth through content and channels ÔÇö every post has a purpose."
+    ­ƒÆ╝  sales-strategist      Sales Strategist      "Closes deals with strategic precision ÔÇö understand the buyer before pitching the solution."
+    ­ƒôï  product-manager       Product Manager       "Shapes what gets built and why ÔÇö every feature earns its place."
+    ­ƒôà  project-manager       Project Manager       "Keeps the train on the tracks ÔÇö scope, schedule, and sanity."
+    ­ƒÄº  support-specialist    Support Specialist    "First line of defense for users ÔÇö solve fast, document everything."
+    ­ƒÄ«  game-developer        Game Developer        "Builds worlds players want to live in ÔÇö every mechanic serves the experience."
+    ­ƒô║  media-buyer           Media Buyer           "Maximizes ROI across ad channels ÔÇö every dollar tracked, every impression measured."
+    ÔÜû´©Å  compliance-legal      Compliance & Legal    "Ensures you ship safely and legally ÔÇö compliance is a feature, not a blocker."
+
+­ƒæï Squad hire ÔÇö team creation wizard starting... (full implementation pending)
+   Name: Architect
+
+---
+
+­ƒæï Squad hire ÔÇö team creation wizard starting... (full implementation pending)
+   Name: ServiceExtractor
+
+---
+
+­ƒæï Squad hire ÔÇö team creation wizard starting... (full implementation pending)
+   Name: InfraOps
+
+---
+
+­ƒæï Squad hire ÔÇö team creation wizard starting... (full implementation pending)
+   Name: QualityGate
