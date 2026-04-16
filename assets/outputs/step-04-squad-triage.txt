@@ -1,0 +1,46 @@
+ÔùÅ List directory .
+  Ôöö 12 files found
+
+ÔùÅ Read BOUNDED-CONTEXT-ANALYSIS.md
+  Ôöé eduverse-academy\BOUNDED-CONTEXT-ANALYSIS.md
+  Ôöö 1 line read
+
+ÔùÅ Read BOUNDED-CONTEXT-ANALYSIS.md
+  Ôöé eduverse-academy\BOUNDED-CONTEXT-ANALYSIS.md
+  Ôöö L101:200 (100 lines read)
+
+ÔùÅ Read BOUNDED-CONTEXT-ANALYSIS.md
+  Ôöé eduverse-academy\BOUNDED-CONTEXT-ANALYSIS.md
+  Ôöö L1:100 (100 lines read)
+
+ÔùÅ Read BOUNDED-CONTEXT-ANALYSIS.md
+  Ôöé eduverse-academy\BOUNDED-CONTEXT-ANALYSIS.md
+  Ôöö L201:300 (100 lines read)
+
+ÔùÅ Read BOUNDED-CONTEXT-ANALYSIS.md
+  Ôöé eduverse-academy\BOUNDED-CONTEXT-ANALYSIS.md
+  Ôöö L301:400 (99 lines read)
+
+ÔùÅ Read BOUNDED-CONTEXT-ANALYSIS.md
+  Ôöé eduverse-academy\BOUNDED-CONTEXT-ANALYSIS.md
+  Ôöö L401:500 (17 lines read)
+
+Now I have full context. Let me create the detailed decomposition plan.
+
+ÔùÅ Create DECOMPOSITION-PLAN.md +973
+
+Created `DECOMPOSITION-PLAN.md` (48.5KB) at the repo root with:
+
+- **8 extraction phases** ordered least-to-most coupled: Notification ÔåÆ Video ÔåÆ Certificate ÔåÆ Course Catalog ÔåÆ Assessment ÔåÆ Payment ÔåÆ Student Progress ÔåÆ Enrollment
+- **Choreography saga** for enrollment-payment flow with full state machine, compensating transactions, timeout handling, and idempotency rules
+- **API Gateway routing table** with Azure API Management policies, feature flag routing, circuit breaker fallback to monolith, and internal service-to-service communication rules
+- **Risk assessment** with 12 identified risks, likelihood/impact ratings, and detailed mitigation plans for high-impact risks
+- **Rollback strategy** with per-phase rollback via feature flags (<1 min recovery)
+- **Success criteria & observability** stack with alerting thresholds
+
+Each phase includes current state analysis, target architecture diagrams, step-by-step tasks, route patterns, and validation checklists.
+
+
+Changes   +973 -0
+Requests  3 Premium (4m 14s)
+Tokens    Ôåæ 161.9k ÔÇó Ôåô 14.1k ÔÇó 82.4k (cached)
