@@ -1,0 +1,213 @@
+ÔùÅ List directory .
+  Ôöö 23 files found
+
+ÔùÅ Search (glob)
+  Ôöé "**/docker-compose*"
+  Ôöö 2 files found
+
+ÔùÅ Search (glob)
+  Ôöé "**/Dockerfile"
+  Ôöö 10 files found
+
+ÔùÅ Search (glob)
+  Ôöé "**/application.yml"
+  Ôöö 10 files found
+
+ÔùÅ Read application.yml
+  Ôöé enrollment-service\src\main\resources\application.yml
+  Ôöö 65 lines read
+
+ÔùÅ Read Dockerfile
+  Ôöé api-gateway\Dockerfile
+  Ôöö 14 lines read
+
+ÔùÅ Read docker-compose.yml
+  Ôöé eduverse-academy\docker-compose.yml
+  Ôöö 77 lines read
+
+ÔùÅ Read application.yml
+  Ôöé api-gateway\src\main\resources\application.yml
+  Ôöö 136 lines read
+
+ÔùÅ Read Dockerfile
+  Ôöé notification-service\Dockerfile
+  Ôöö 16 lines read
+
+ÔùÅ List directory shared-events
+  Ôöö 3 files found
+
+Let me check the remaining service ports and the shared-events Dockerfile pattern.
+
+ÔùÅ Read pom.xml
+  Ôöé shared-events\pom.xml
+  Ôöö L1:20 (20 lines read)
+
+ÔùÅ Search (grep)
+  Ôöé "server:\s*\n\s*port:" in **/application.yml
+  Ôöö 35 lines found
+
+ÔùÅ Search (glob)
+  Ôöé ".github/workflows/*.yml"
+  Ôöö No matches found
+
+ÔùÅ Search (grep)
+  Ôöé "DB_URL|datasource.*url" in **/application.yml
+  Ôöö 8 lines found
+
+ÔùÅ Search (grep)
+  Ôöé "EXPOSE" in **/Dockerfile
+  Ôöö 10 lines found
+
+Now let me check Service Bus topic names used across services.
+
+ÔùÅ Search (grep)
+  Ôöé "entity-name:" in **/application.yml
+  Ôöö 11 lines found
+
+ÔùÅ Search (grep)
+  Ôöé "subscription-name:" in **/application.yml
+  Ôöö 11 lines found
+
+Good, I now have the complete picture. Let me create all the files. I'll create a plan first, then build everything in parallel.
+
+ÔùÅ Create deployment directories (shell)
+  Ôöé New-Item -ItemType Directory -Path "C:\code\gbb\labs\appmodlab-monolith-to-m
+  Ôöé icroservices-with-agents\deployment\azure\modules" -Force; New-Item
+  Ôöé -ItemType Directory -Path "C:\code\gbb\labs\appmodlab-monolith-to-microservi
+  Ôöé ces-with-agents\.github\workflows" -Force
+  Ôöö 6 lines...
+
+Now I'll create all files in parallel:
+
+ÔùÅ Create container-app.bicep +154
+  Ôöö deployment\azure\modules\container-app.bicep
+
+ÔùÅ Create service-bus.bicep +217
+  Ôöö deployment\azure\modules\service-bus.bicep
+
+ÔùÅ Create sql-database.bicep +125
+  Ôöö deployment\azure\modules\sql-database.bicep
+
+Now create the main Bicep template, GitHub Actions workflow, docker-compose, and VALIDATION.md:
+
+ÔùÅ Create main.bicep +248
+  Ôöö deployment\azure\main.bicep
+
+ÔùÅ Create docker-compose.yml +318
+
+ÔùÅ Create VALIDATION.md +512
+
+ÔùÅ Create deploy-all.yml +319
+  Ôöö .github\workflows\deploy-all.yml
+
+ÔùÅ Create init-databases.sql +15
+  Ôöö deployment\init-databases.sql
+
+Now let me get a rubber-duck review before committing:
+
+ÔùÅ Rubber-duck Review deployment infrastructure
+  Ôöé Search (grep)
+  Ôöé   Ôöé "Topics\.COURSE_PUBLISHED|course-published|publishLessonCompleted|lesson-com
+  Ôöé   Ôöé pleted|payment-refunded" in **/*.{java,yml,yaml,bicep}
+  Ôöé   Ôöö 10 lines found
+  Ôöö Search (grep)
+      Ôöé "Expected: 12 containers|docker compose build|az deployment group
+      Ôöé show|accessible only from Container Apps|Service Bus accessible only from
+      Ôöé Azure services" (VALIDATION.md)
+      Ôöö 5 lines found
+
+Good catches. Let me fix the blocking issues: secrets wiring, workflow ordering, and Compose build pattern.
+
+ÔùÅ Edit container-app.bicep +4
+  Ôöö deployment\azure\modules\container-app.bicep
+
+Now fix main.bicep to pass secrets to container apps, and fix the monolith URL issue:
+
+ÔùÅ Edit main.bicep +4
+  Ôöö deployment\azure\main.bicep
+
+ÔùÅ Edit main.bicep +1
+  Ôöö deployment\azure\main.bicep
+
+Now fix the service-bus.bicep to not expose connection string as output (security), and instead use `@secure()`:
+
+ÔùÅ Edit service-bus.bicep +1
+  Ôöö deployment\azure\modules\service-bus.bicep
+
+Now fix the GitHub Actions workflow ÔÇö reorder so infrastructure deploys before build-and-push needs ACR:
+
+ÔùÅ Read deploy-all.yml
+  Ôöé .github\workflows\deploy-all.yml
+  Ôöö 318 lines read
+
+ÔùÅ Edit deploy-all.yml +1 -1
+  Ôöö .github\workflows\deploy-all.yml
+
+ÔùÅ Edit deploy-all.yml -1
+  Ôöö .github\workflows\deploy-all.yml
+
+ÔùÅ Edit deploy-all.yml +2 -2
+  Ôöö .github\workflows\deploy-all.yml
+
+Now fix the Docker Compose shared-events build pattern. The microservice Dockerfiles use `COPY --from=shared-events`, so we need to build shared-events as a proper Docker image first:
+
+ÔùÅ Edit docker-compose.yml +4 -9
+
+Now check if shared-events has a Dockerfile, and create one if not:
+
+ÔùÅ Search (glob)
+  Ôöé "shared-events/Dockerfile"
+  Ôöö No matches found
+
+ÔùÅ Create Dockerfile +11
+  Ôöö shared-events\Dockerfile
+
+Now update the docker-compose volumes (remove maven-cache since we no longer need it):
+
+ÔùÅ Edit docker-compose.yml -1
+
+Now update VALIDATION.md container count and fix the validation script:
+
+ÔùÅ Edit VALIDATION.md +2 -2
+
+Now commit everything:
+
+ÔùÅ Stage new deployment files (shell)
+  Ôöé cd C:\code\gbb\labs\appmodlab-monolith-to-microservices-with-agents; git add
+  Ôöé deployment/ .github/workflows/deploy-all.yml docker-compose.yml
+  Ôöé VALIDATION.md shared-events/Dockerfile; git status
+  Ôöö 5 lines...
+
+ÔùÅ Commit deployment infrastructure (shell)
+  Ôöé cd C:\code\gbb\labs\appmodlab-monolith-to-microservices-with-agents; git
+  Ôöé commit -m "Add Azure deployment infrastructure, CI/CD pipeline, and local
+  Ôöé dev setup
+  Ôöé
+  Ôöé - deployment/azure/main.bicep: Orchestrates Container Apps, ACR, ÔÇª
+  Ôöö 30 lines...
+
+All files created and committed. Here's a summary:
+
+### Files Created (10 files)
+
+| File | Purpose |
+|------|---------|
+| `deployment/azure/main.bicep` | Orchestrates ACR, Container Apps Environment, PostgreSQL, Service Bus, Log Analytics, APIM (prod) |
+| `deployment/azure/modules/container-app.bicep` | Reusable module with health probes, auto-scaling, secrets support |
+| `deployment/azure/modules/service-bus.bicep` | 8 topics + 11 subscriptions matching all service event consumers |
+| `deployment/azure/modules/sql-database.bicep` | PostgreSQL Flexible Server with database-per-service pattern |
+| `.github/workflows/deploy-all.yml` | 5-stage pipeline: shared-events ÔåÆ infra ÔåÆ build/push (parallel 9x) ÔåÆ deploy ÔåÆ smoke tests |
+| `docker-compose.yml` | Full local stack: 2 Postgres instances, monolith, gateway, 8 microservices |
+| `deployment/init-databases.sql` | Creates 8 per-service databases in the services Postgres |
+| `shared-events/Dockerfile` | Build-stage image for `COPY --from=shared-events` pattern |
+| `VALIDATION.md` | 13-section checklist covering local dev, integration tests, event flows, Azure, CI/CD, security |
+
+### Key design decisions after rubber-duck review:
+- **Secrets wiring**: Container Apps receive `db-password` and `servicebus-connection-string` via `configuration.secrets`
+- **Pipeline ordering**: Infrastructure deploys first so ACR exists before image push
+- **Compose build**: shared-events is a proper Docker image build, not a runtime container
+
+
+Changes   +1938 -16
+Requests  3 Premium (11m 59s)
+Tokens    Ôåæ 2.0m ÔÇó Ôåô 39.6k ÔÇó 1.8m (cached) ÔÇó 8.2k (reasoning)
