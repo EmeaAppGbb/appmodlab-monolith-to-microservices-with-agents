@@ -1,0 +1,53 @@
+spring:
+  application:
+    name: certificate-service
+
+  # Database — own PostgreSQL database (Database-per-Service pattern)
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5437/certificates}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:db/schema.sql
+      data-locations: classpath:db/data.sql
+
+  # Azure Service Bus (disabled by default for local dev)
+  cloud:
+    azure:
+      servicebus:
+        connection-string: ${SERVICEBUS_CONNECTION_STRING:}
+        processor:
+          enrollment-completed:
+            entity-name: enrollment-completed
+            entity-type: topic
+            subscription-name: certificate-service
+
+server:
+  port: ${SERVER_PORT:8088}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when-authorized
+
+logging:
+  level:
+    com.eduverse.certificate: DEBUG
+    com.azure.spring: INFO

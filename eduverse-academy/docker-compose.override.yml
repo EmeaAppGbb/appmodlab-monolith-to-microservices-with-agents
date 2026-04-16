@@ -30,6 +30,11 @@ services:
       NOTIFICATION_SERVICE_URL: http://eduverse-notification-service:8084
       COURSE_CATALOG_SERVICE_URL: http://eduverse-course-catalog-service:8085
       PAYMENT_SERVICE_URL: http://eduverse-payment-service:8086
+      VIDEO_SERVICE_URL: http://eduverse-video-service:8087
+      CERTIFICATE_SERVICE_URL: http://eduverse-certificate-service:8088
+      ASSESSMENT_SERVICE_URL: http://eduverse-assessment-service:8089
+      PROGRESS_SERVICE_URL: http://eduverse-progress-service:8091
+      ENROLLMENT_SERVICE_URL: http://eduverse-enrollment-service:8092
       SPRING_PROFILES_ACTIVE: docker
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8090/actuator/health || exit 1"]
@@ -185,7 +190,247 @@ services:
     networks:
       - eduverse-net
 
+  # ---------- Video Service Database ----------
+  video-db:
+    image: postgres:14
+    container_name: eduverse-video-db
+    environment:
+      POSTGRES_DB: videos
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5436:5432"
+    volumes:
+      - video-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d videos"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - eduverse-net
+
+  # ---------- Video Service (Strangler Fig — Phase 2) ----------
+  video-service:
+    build:
+      context: ../video-service
+      dockerfile: Dockerfile
+    container_name: eduverse-video-service
+    depends_on:
+      video-db:
+        condition: service_healthy
+    ports:
+      - "8087:8087"
+    environment:
+      DB_URL: jdbc:postgresql://video-db:5432/videos
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      SERVICEBUS_CONNECTION_STRING: ${SERVICEBUS_CONNECTION_STRING:-}
+      SERVER_PORT: 8087
+      SPRING_PROFILES_ACTIVE: docker
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8087/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - eduverse-net
+
+  # ---------- Certificate Service Database ----------
+  certificate-db:
+    image: postgres:14
+    container_name: eduverse-certificate-db
+    environment:
+      POSTGRES_DB: certificates
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5437:5432"
+    volumes:
+      - certificate-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d certificates"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - eduverse-net
+
+  # ---------- Certificate Service (Strangler Fig — Phase 3) ----------
+  certificate-service:
+    build:
+      context: ../certificate-service
+      dockerfile: Dockerfile
+    container_name: eduverse-certificate-service
+    depends_on:
+      certificate-db:
+        condition: service_healthy
+    ports:
+      - "8088:8088"
+    environment:
+      DB_URL: jdbc:postgresql://certificate-db:5432/certificates
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      SERVICEBUS_CONNECTION_STRING: ${SERVICEBUS_CONNECTION_STRING:-}
+      SERVER_PORT: 8088
+      SPRING_PROFILES_ACTIVE: docker
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8088/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - eduverse-net
+
+  # ---------- Assessment Service Database ----------
+  assessment-db:
+    image: postgres:14
+    container_name: eduverse-assessment-db
+    environment:
+      POSTGRES_DB: assessments
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5438:5432"
+    volumes:
+      - assessment-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d assessments"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - eduverse-net
+
+  # ---------- Assessment Service (Strangler Fig — Phase 5) ----------
+  assessment-service:
+    build:
+      context: ../assessment-service
+      dockerfile: Dockerfile
+    container_name: eduverse-assessment-service
+    depends_on:
+      assessment-db:
+        condition: service_healthy
+    ports:
+      - "8089:8089"
+    environment:
+      DB_URL: jdbc:postgresql://assessment-db:5432/assessments
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      SERVICEBUS_CONNECTION_STRING: ${SERVICEBUS_CONNECTION_STRING:-}
+      SERVER_PORT: 8089
+      SPRING_PROFILES_ACTIVE: docker
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8089/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - eduverse-net
+
+  # ---------- Progress Service Database ----------
+  progress-db:
+    image: postgres:14
+    container_name: eduverse-progress-db
+    environment:
+      POSTGRES_DB: progress
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5439:5432"
+    volumes:
+      - progress-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d progress"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - eduverse-net
+
+  # ---------- Progress Service (Strangler Fig — Phase 7) ----------
+  progress-service:
+    build:
+      context: ../progress-service
+      dockerfile: Dockerfile
+    container_name: eduverse-progress-service
+    depends_on:
+      progress-db:
+        condition: service_healthy
+    ports:
+      - "8091:8091"
+    environment:
+      DB_URL: jdbc:postgresql://progress-db:5432/progress
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      SERVICEBUS_CONNECTION_STRING: ${SERVICEBUS_CONNECTION_STRING:-}
+      SERVER_PORT: 8091
+      SPRING_PROFILES_ACTIVE: docker
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8091/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - eduverse-net
+
+  # ---------- Enrollment Service Database ----------
+  enrollment-db:
+    image: postgres:14
+    container_name: eduverse-enrollment-db
+    environment:
+      POSTGRES_DB: enrollments
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5440:5432"
+    volumes:
+      - enrollment-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d enrollments"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - eduverse-net
+
+  # ---------- Enrollment Service (Strangler Fig — Phase 8) ----------
+  enrollment-service:
+    build:
+      context: ../enrollment-service
+      dockerfile: Dockerfile
+    container_name: eduverse-enrollment-service
+    depends_on:
+      enrollment-db:
+        condition: service_healthy
+    ports:
+      - "8092:8092"
+    environment:
+      DB_URL: jdbc:postgresql://enrollment-db:5432/enrollments
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      SERVICEBUS_CONNECTION_STRING: ${SERVICEBUS_CONNECTION_STRING:-}
+      SERVER_PORT: 8092
+      SPRING_PROFILES_ACTIVE: docker
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8092/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - eduverse-net
+
 volumes:
   notification-pgdata:
   course-catalog-pgdata:
   payment-pgdata:
+  video-pgdata:
+  certificate-pgdata:
+  assessment-pgdata:
+  progress-pgdata:
+  enrollment-pgdata:

@@ -24,9 +24,9 @@ spring:
             target-service: course-catalog-service
             description: "Course catalog and management APIs (extracted microservice)"
 
-        # Enrollment routes
+        # Enrollment routes — Strangler Fig: routed to extracted enrollment-service
         - id: enrollments
-          uri: ${MONOLITH_URL:http://localhost:8080}
+          uri: ${ENROLLMENT_SERVICE_URL:http://localhost:8092}
           predicates:
             - Path=/api/enrollments/**
           filters:
@@ -34,11 +34,11 @@ spring:
           metadata:
             feature-flag: ff-enrollment-service
             target-service: enrollment-service
-            description: "Student enrollment lifecycle APIs"
+            description: "Student enrollment lifecycle APIs (extracted microservice)"
 
-        # Assessment routes
+        # Assessment routes — Strangler Fig: routed to extracted assessment-service
         - id: assessments
-          uri: ${MONOLITH_URL:http://localhost:8080}
+          uri: ${ASSESSMENT_SERVICE_URL:http://localhost:8089}
           predicates:
             - Path=/api/assessments/**
           filters:
@@ -46,11 +46,11 @@ spring:
           metadata:
             feature-flag: ff-assessment-service
             target-service: assessment-service
-            description: "Quiz, exam, and assignment APIs"
+            description: "Quiz, exam, and assignment APIs (extracted microservice)"
 
-        # Video routes
+        # Video routes — Strangler Fig: routed to extracted video-service
         - id: videos
-          uri: ${MONOLITH_URL:http://localhost:8080}
+          uri: ${VIDEO_SERVICE_URL:http://localhost:8087}
           predicates:
             - Path=/api/videos/**
           filters:
@@ -58,11 +58,11 @@ spring:
           metadata:
             feature-flag: ff-video-service
             target-service: video-service
-            description: "Video upload, processing, and streaming APIs"
+            description: "Video upload, processing, and streaming APIs (extracted microservice)"
 
-        # Certificate routes
+        # Certificate routes — Strangler Fig: routed to extracted certificate-service
         - id: certificates
-          uri: ${MONOLITH_URL:http://localhost:8080}
+          uri: ${CERTIFICATE_SERVICE_URL:http://localhost:8088}
           predicates:
             - Path=/api/certificates/**
           filters:
@@ -70,7 +70,7 @@ spring:
           metadata:
             feature-flag: ff-certificate-service
             target-service: certificate-service
-            description: "Certificate generation and download APIs"
+            description: "Certificate generation and download APIs (extracted microservice)"
 
         # Payment routes — Strangler Fig: routed to extracted payment-service
         - id: payments
@@ -96,9 +96,9 @@ spring:
             target-service: notification-service
             description: "Notification management APIs (extracted microservice)"
 
-        # Student Progress routes
+        # Student Progress routes — Strangler Fig: routed to extracted progress-service
         - id: progress
-          uri: ${MONOLITH_URL:http://localhost:8080}
+          uri: ${PROGRESS_SERVICE_URL:http://localhost:8091}
           predicates:
             - Path=/api/progress/**
           filters:
@@ -106,7 +106,7 @@ spring:
           metadata:
             feature-flag: ff-progress-service
             target-service: progress-service
-            description: "Student progress tracking APIs"
+            description: "Student progress tracking APIs (extracted microservice)"
 
         # Monolith fallback — catches all remaining traffic (JSP pages, static resources, etc.)
         - id: monolith-fallback
