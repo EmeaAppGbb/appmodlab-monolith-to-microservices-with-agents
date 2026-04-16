@@ -1,0 +1,311 @@
+# =============================================================================
+# EduVerse Academy — Full Stack Docker Compose
+# Runs all 8 microservices + API gateway + monolith for local development
+#
+# Usage:
+#   docker compose up -d                    # Start all services
+#   docker compose up -d api-gateway        # Start gateway + dependencies
+#   docker compose logs -f enrollment       # Follow specific service
+#   docker compose down -v                  # Stop and clean up
+# =============================================================================
+
+services:
+
+  # ── Shared Infrastructure ───────────────────────────────────────────────────
+
+  postgres-monolith:
+    image: postgres:16
+    container_name: eduverse-postgres-monolith
+    environment:
+      POSTGRES_DB: eduverse
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata-monolith:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d eduverse"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - eduverse-net
+
+  postgres-services:
+    image: postgres:16
+    container_name: eduverse-postgres-services
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata-services:/var/lib/postgresql/data
+      - ./deployment/init-databases.sql:/docker-entrypoint-initdb.d/init-databases.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - eduverse-net
+
+  # ── Shared Events Library Build ─────────────────────────────────────────────
+
+  shared-events:
+    build:
+      context: ./shared-events
+      dockerfile: Dockerfile
+    image: shared-events:latest
+    networks:
+      - eduverse-net
+
+  # ── Monolith (fallback) ────────────────────────────────────────────────────
+
+  monolith:
+    build:
+      context: ./eduverse-academy
+      dockerfile: Dockerfile
+    container_name: eduverse-monolith
+    depends_on:
+      postgres-monolith:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      DB_HOST: postgres-monolith
+      DB_PORT: 5432
+      DB_NAME: eduverse
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      JDBC_URL: jdbc:postgresql://postgres-monolith:5432/eduverse
+    networks:
+      - eduverse-net
+
+  # ── API Gateway ─────────────────────────────────────────────────────────────
+
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    container_name: eduverse-api-gateway
+    depends_on:
+      - notification
+      - course-catalog
+      - payment
+      - video
+      - certificate
+      - assessment
+      - progress
+      - enrollment
+    ports:
+      - "8090:8090"
+    environment:
+      MONOLITH_URL: http://monolith:8080
+      COURSE_CATALOG_SERVICE_URL: http://course-catalog:8085
+      ENROLLMENT_SERVICE_URL: http://enrollment:8092
+      ASSESSMENT_SERVICE_URL: http://assessment:8089
+      VIDEO_SERVICE_URL: http://video:8087
+      CERTIFICATE_SERVICE_URL: http://certificate:8088
+      PAYMENT_SERVICE_URL: http://payment:8086
+      NOTIFICATION_SERVICE_URL: http://notification:8084
+      PROGRESS_SERVICE_URL: http://progress:8091
+    networks:
+      - eduverse-net
+
+  # ── Microservices ───────────────────────────────────────────────────────────
+
+  notification:
+    build:
+      context: ./notification-service
+      dockerfile: Dockerfile
+    container_name: eduverse-notification
+    depends_on:
+      postgres-services:
+        condition: service_healthy
+      shared-events:
+        condition: service_completed_successfully
+    ports:
+      - "8084:8084"
+    environment:
+      SERVER_PORT: 8084
+      DB_URL: jdbc:postgresql://postgres-services:5432/notifications
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      SPRING_PROFILES_ACTIVE: local
+    networks:
+      - eduverse-net
+
+  course-catalog:
+    build:
+      context: ./course-catalog-service
+      dockerfile: Dockerfile
+    container_name: eduverse-course-catalog
+    depends_on:
+      postgres-services:
+        condition: service_healthy
+      shared-events:
+        condition: service_completed_successfully
+    ports:
+      - "8085:8085"
+    environment:
+      SERVER_PORT: 8085
+      DB_URL: jdbc:postgresql://postgres-services:5432/coursecatalog
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      SPRING_PROFILES_ACTIVE: local
+    networks:
+      - eduverse-net
+
+  payment:
+    build:
+      context: ./payment-service
+      dockerfile: Dockerfile
+    container_name: eduverse-payment
+    depends_on:
+      postgres-services:
+        condition: service_healthy
+      shared-events:
+        condition: service_completed_successfully
+    ports:
+      - "8086:8086"
+    environment:
+      SERVER_PORT: 8086
+      DB_URL: jdbc:postgresql://postgres-services:5432/payments
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      SPRING_PROFILES_ACTIVE: local
+    networks:
+      - eduverse-net
+
+  video:
+    build:
+      context: ./video-service
+      dockerfile: Dockerfile
+    container_name: eduverse-video
+    depends_on:
+      postgres-services:
+        condition: service_healthy
+      shared-events:
+        condition: service_completed_successfully
+    ports:
+      - "8087:8087"
+    environment:
+      SERVER_PORT: 8087
+      DB_URL: jdbc:postgresql://postgres-services:5432/videos
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      SPRING_PROFILES_ACTIVE: local
+    networks:
+      - eduverse-net
+
+  certificate:
+    build:
+      context: ./certificate-service
+      dockerfile: Dockerfile
+    container_name: eduverse-certificate
+    depends_on:
+      postgres-services:
+        condition: service_healthy
+      shared-events:
+        condition: service_completed_successfully
+    ports:
+      - "8088:8088"
+    environment:
+      SERVER_PORT: 8088
+      DB_URL: jdbc:postgresql://postgres-services:5432/certificates
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      SPRING_PROFILES_ACTIVE: local
+    networks:
+      - eduverse-net
+
+  assessment:
+    build:
+      context: ./assessment-service
+      dockerfile: Dockerfile
+    container_name: eduverse-assessment
+    depends_on:
+      postgres-services:
+        condition: service_healthy
+      shared-events:
+        condition: service_completed_successfully
+    ports:
+      - "8089:8089"
+    environment:
+      SERVER_PORT: 8089
+      DB_URL: jdbc:postgresql://postgres-services:5432/assessments
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      SPRING_PROFILES_ACTIVE: local
+    networks:
+      - eduverse-net
+
+  progress:
+    build:
+      context: ./progress-service
+      dockerfile: Dockerfile
+    container_name: eduverse-progress
+    depends_on:
+      postgres-services:
+        condition: service_healthy
+      shared-events:
+        condition: service_completed_successfully
+    ports:
+      - "8091:8091"
+    environment:
+      SERVER_PORT: 8091
+      DB_URL: jdbc:postgresql://postgres-services:5432/progress
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      SPRING_PROFILES_ACTIVE: local
+    networks:
+      - eduverse-net
+
+  enrollment:
+    build:
+      context: ./enrollment-service
+      dockerfile: Dockerfile
+    container_name: eduverse-enrollment
+    depends_on:
+      postgres-services:
+        condition: service_healthy
+      shared-events:
+        condition: service_completed_successfully
+    ports:
+      - "8092:8092"
+    environment:
+      SERVER_PORT: 8092
+      DB_URL: jdbc:postgresql://postgres-services:5432/enrollments
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      SPRING_PROFILES_ACTIVE: local
+    networks:
+      - eduverse-net
+
+  # ── Development Tools (optional) ────────────────────────────────────────────
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: eduverse-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@eduverse.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres-monolith
+      - postgres-services
+    networks:
+      - eduverse-net
+    profiles:
+      - tools
+
+volumes:
+  pgdata-monolith:
+  pgdata-services:
+
+networks:
+  eduverse-net:
+    driver: bridge

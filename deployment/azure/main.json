@@ -1,0 +1,1416 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.42.1.51946",
+      "templateHash": "16816923425911255155"
+    }
+  },
+  "parameters": {
+    "environmentName": {
+      "type": "string",
+      "defaultValue": "dev",
+      "allowedValues": [
+        "dev",
+        "staging",
+        "prod"
+      ],
+      "metadata": {
+        "description": "Environment name (dev, staging, prod)"
+      }
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]",
+      "metadata": {
+        "description": "Location for all resources"
+      }
+    },
+    "dbAdminLogin": {
+      "type": "securestring",
+      "metadata": {
+        "description": "PostgreSQL administrator login"
+      }
+    },
+    "dbAdminPassword": {
+      "type": "securestring",
+      "metadata": {
+        "description": "PostgreSQL administrator password"
+      }
+    },
+    "imageTag": {
+      "type": "string",
+      "defaultValue": "latest",
+      "metadata": {
+        "description": "Container image tag"
+      }
+    }
+  },
+  "variables": {
+    "prefix": "[format('eduverse-{0}', parameters('environmentName'))]",
+    "tags": {
+      "project": "eduverse-academy",
+      "environment": "[parameters('environmentName')]",
+      "managedBy": "bicep"
+    },
+    "services": [
+      {
+        "name": "notification",
+        "port": 8084,
+        "dbName": "notifications"
+      },
+      {
+        "name": "course-catalog",
+        "port": 8085,
+        "dbName": "coursecatalog"
+      },
+      {
+        "name": "payment",
+        "port": 8086,
+        "dbName": "payments"
+      },
+      {
+        "name": "video",
+        "port": 8087,
+        "dbName": "videos"
+      },
+      {
+        "name": "certificate",
+        "port": 8088,
+        "dbName": "certificates"
+      },
+      {
+        "name": "assessment",
+        "port": 8089,
+        "dbName": "assessments"
+      },
+      {
+        "name": "progress",
+        "port": 8091,
+        "dbName": "progress"
+      },
+      {
+        "name": "enrollment",
+        "port": 8092,
+        "dbName": "enrollments"
+      }
+    ]
+  },
+  "resources": [
+    {
+      "type": "Microsoft.ContainerRegistry/registries",
+      "apiVersion": "2023-07-01",
+      "name": "[replace(format('{0}acr', variables('prefix')), '-', '')]",
+      "location": "[parameters('location')]",
+      "tags": "[variables('tags')]",
+      "sku": {
+        "name": "Standard"
+      },
+      "properties": {
+        "adminUserEnabled": false
+      }
+    },
+    {
+      "type": "Microsoft.ManagedIdentity/userAssignedIdentities",
+      "apiVersion": "2023-01-31",
+      "name": "[format('{0}-acr-pull-identity', variables('prefix'))]",
+      "location": "[parameters('location')]",
+      "tags": "[variables('tags')]"
+    },
+    {
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "scope": "[resourceId('Microsoft.ContainerRegistry/registries', replace(format('{0}acr', variables('prefix')), '-', ''))]",
+      "name": "[guid(resourceId('Microsoft.ContainerRegistry/registries', replace(format('{0}acr', variables('prefix')), '-', '')), resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-acr-pull-identity', variables('prefix'))), 'AcrPull')]",
+      "properties": {
+        "principalId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-acr-pull-identity', variables('prefix'))), '2023-01-31').principalId]",
+        "principalType": "ServicePrincipal",
+        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '7f951dda-4ed3-4680-a7ca-43fe172d538d')]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.ContainerRegistry/registries', replace(format('{0}acr', variables('prefix')), '-', ''))]",
+        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-acr-pull-identity', variables('prefix')))]"
+      ]
+    },
+    {
+      "type": "Microsoft.OperationalInsights/workspaces",
+      "apiVersion": "2022-10-01",
+      "name": "[format('{0}-logs', variables('prefix'))]",
+      "location": "[parameters('location')]",
+      "tags": "[variables('tags')]",
+      "properties": {
+        "sku": {
+          "name": "PerGB2018"
+        },
+        "retentionInDays": 30
+      }
+    },
+    {
+      "type": "Microsoft.App/managedEnvironments",
+      "apiVersion": "2023-11-02-preview",
+      "name": "[format('{0}-env', variables('prefix'))]",
+      "location": "[parameters('location')]",
+      "tags": "[variables('tags')]",
+      "properties": {
+        "appLogsConfiguration": {
+          "destination": "log-analytics",
+          "logAnalyticsConfiguration": {
+            "customerId": "[reference(resourceId('Microsoft.OperationalInsights/workspaces', format('{0}-logs', variables('prefix'))), '2022-10-01').customerId]",
+            "sharedKey": "[listKeys(resourceId('Microsoft.OperationalInsights/workspaces', format('{0}-logs', variables('prefix'))), '2022-10-01').primarySharedKey]"
+          }
+        },
+        "zoneRedundant": "[equals(parameters('environmentName'), 'prod')]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.OperationalInsights/workspaces', format('{0}-logs', variables('prefix')))]"
+      ]
+    },
+    {
+      "condition": "[equals(parameters('environmentName'), 'prod')]",
+      "type": "Microsoft.ApiManagement/service",
+      "apiVersion": "2023-05-01-preview",
+      "name": "[format('{0}-apim', variables('prefix'))]",
+      "location": "[parameters('location')]",
+      "tags": "[variables('tags')]",
+      "sku": {
+        "name": "Consumption",
+        "capacity": 0
+      },
+      "properties": {
+        "publisherEmail": "platform@eduverse.academy",
+        "publisherName": "EduVerse Academy"
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "serviceBus",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "namespaceName": {
+            "value": "[format('{0}-servicebus', variables('prefix'))]"
+          },
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "skuName": "[if(equals(parameters('environmentName'), 'prod'), createObject('value', 'Premium'), createObject('value', 'Standard'))]",
+          "tags": {
+            "value": "[variables('tags')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.42.1.51946",
+              "templateHash": "17622808652406199523"
+            }
+          },
+          "parameters": {
+            "namespaceName": {
+              "type": "string",
+              "metadata": {
+                "description": "Name of the Service Bus namespace"
+              }
+            },
+            "location": {
+              "type": "string",
+              "defaultValue": "[resourceGroup().location]",
+              "metadata": {
+                "description": "Location for resources"
+              }
+            },
+            "skuName": {
+              "type": "string",
+              "defaultValue": "Standard",
+              "allowedValues": [
+                "Basic",
+                "Standard",
+                "Premium"
+              ],
+              "metadata": {
+                "description": "SKU for Service Bus"
+              }
+            },
+            "tags": {
+              "type": "object",
+              "defaultValue": {},
+              "metadata": {
+                "description": "Tags for the resource"
+              }
+            }
+          },
+          "variables": {
+            "topics": [
+              "student-enrolled",
+              "enrollment-activated",
+              "enrollment-completed",
+              "payment-completed",
+              "payment-failed",
+              "assessment-passed",
+              "progress-updated",
+              "certificate-issued"
+            ]
+          },
+          "resources": [
+            {
+              "type": "Microsoft.ServiceBus/namespaces",
+              "apiVersion": "2022-10-01-preview",
+              "name": "[parameters('namespaceName')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "sku": {
+                "name": "[parameters('skuName')]",
+                "tier": "[parameters('skuName')]"
+              },
+              "properties": {
+                "minimumTlsVersion": "1.2",
+                "disableLocalAuth": false
+              }
+            },
+            {
+              "copy": {
+                "name": "serviceBusTopics",
+                "count": "[length(variables('topics'))]"
+              },
+              "type": "Microsoft.ServiceBus/namespaces/topics",
+              "apiVersion": "2022-10-01-preview",
+              "name": "[format('{0}/{1}', parameters('namespaceName'), variables('topics')[copyIndex()])]",
+              "properties": {
+                "defaultMessageTimeToLive": "P14D",
+                "maxSizeInMegabytes": 1024,
+                "enablePartitioning": false,
+                "supportOrdering": true
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.ServiceBus/namespaces', parameters('namespaceName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.ServiceBus/namespaces/topics/subscriptions",
+              "apiVersion": "2022-10-01-preview",
+              "name": "[format('{0}/{1}/{2}', parameters('namespaceName'), variables('topics')[0], 'payment-service')]",
+              "properties": {
+                "deadLetteringOnMessageExpiration": true,
+                "defaultMessageTimeToLive": "P14D",
+                "lockDuration": "PT1M",
+                "maxDeliveryCount": 10
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.ServiceBus/namespaces/topics', parameters('namespaceName'), variables('topics')[0])]"
+              ]
+            },
+            {
+              "type": "Microsoft.ServiceBus/namespaces/topics/subscriptions",
+              "apiVersion": "2022-10-01-preview",
+              "name": "[format('{0}/{1}/{2}', parameters('namespaceName'), variables('topics')[0], 'notification-service')]",
+              "properties": {
+                "deadLetteringOnMessageExpiration": true,
+                "defaultMessageTimeToLive": "P14D",
+                "lockDuration": "PT1M",
+                "maxDeliveryCount": 10
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.ServiceBus/namespaces/topics', parameters('namespaceName'), variables('topics')[0])]"
+              ]
+            },
+            {
+              "type": "Microsoft.ServiceBus/namespaces/topics/subscriptions",
+              "apiVersion": "2022-10-01-preview",
+              "name": "[format('{0}/{1}/{2}', parameters('namespaceName'), variables('topics')[1], 'progress-service')]",
+              "properties": {
+                "deadLetteringOnMessageExpiration": true,
+                "defaultMessageTimeToLive": "P14D",
+                "lockDuration": "PT1M",
+                "maxDeliveryCount": 10
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.ServiceBus/namespaces/topics', parameters('namespaceName'), variables('topics')[1])]"
+              ]
+            },
+            {
+              "type": "Microsoft.ServiceBus/namespaces/topics/subscriptions",
+              "apiVersion": "2022-10-01-preview",
+              "name": "[format('{0}/{1}/{2}', parameters('namespaceName'), variables('topics')[2], 'certificate-service')]",
+              "properties": {
+                "deadLetteringOnMessageExpiration": true,
+                "defaultMessageTimeToLive": "P14D",
+                "lockDuration": "PT1M",
+                "maxDeliveryCount": 10
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.ServiceBus/namespaces/topics', parameters('namespaceName'), variables('topics')[2])]"
+              ]
+            },
+            {
+              "type": "Microsoft.ServiceBus/namespaces/topics/subscriptions",
+              "apiVersion": "2022-10-01-preview",
+              "name": "[format('{0}/{1}/{2}', parameters('namespaceName'), variables('topics')[3], 'enrollment-service')]",
+              "properties": {
+                "deadLetteringOnMessageExpiration": true,
+                "defaultMessageTimeToLive": "P14D",
+                "lockDuration": "PT1M",
+                "maxDeliveryCount": 10
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.ServiceBus/namespaces/topics', parameters('namespaceName'), variables('topics')[3])]"
+              ]
+            },
+            {
+              "type": "Microsoft.ServiceBus/namespaces/topics/subscriptions",
+              "apiVersion": "2022-10-01-preview",
+              "name": "[format('{0}/{1}/{2}', parameters('namespaceName'), variables('topics')[3], 'notification-service')]",
+              "properties": {
+                "deadLetteringOnMessageExpiration": true,
+                "defaultMessageTimeToLive": "P14D",
+                "lockDuration": "PT1M",
+                "maxDeliveryCount": 10
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.ServiceBus/namespaces/topics', parameters('namespaceName'), variables('topics')[3])]"
+              ]
+            },
+            {
+              "type": "Microsoft.ServiceBus/namespaces/topics/subscriptions",
+              "apiVersion": "2022-10-01-preview",
+              "name": "[format('{0}/{1}/{2}', parameters('namespaceName'), variables('topics')[4], 'enrollment-service')]",
+              "properties": {
+                "deadLetteringOnMessageExpiration": true,
+                "defaultMessageTimeToLive": "P14D",
+                "lockDuration": "PT1M",
+                "maxDeliveryCount": 10
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.ServiceBus/namespaces/topics', parameters('namespaceName'), variables('topics')[4])]"
+              ]
+            },
+            {
+              "type": "Microsoft.ServiceBus/namespaces/topics/subscriptions",
+              "apiVersion": "2022-10-01-preview",
+              "name": "[format('{0}/{1}/{2}', parameters('namespaceName'), variables('topics')[5], 'progress-service')]",
+              "properties": {
+                "deadLetteringOnMessageExpiration": true,
+                "defaultMessageTimeToLive": "P14D",
+                "lockDuration": "PT1M",
+                "maxDeliveryCount": 10
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.ServiceBus/namespaces/topics', parameters('namespaceName'), variables('topics')[5])]"
+              ]
+            },
+            {
+              "type": "Microsoft.ServiceBus/namespaces/topics/subscriptions",
+              "apiVersion": "2022-10-01-preview",
+              "name": "[format('{0}/{1}/{2}', parameters('namespaceName'), variables('topics')[6], 'enrollment-service')]",
+              "properties": {
+                "deadLetteringOnMessageExpiration": true,
+                "defaultMessageTimeToLive": "P14D",
+                "lockDuration": "PT1M",
+                "maxDeliveryCount": 10
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.ServiceBus/namespaces/topics', parameters('namespaceName'), variables('topics')[6])]"
+              ]
+            },
+            {
+              "type": "Microsoft.ServiceBus/namespaces/topics/subscriptions",
+              "apiVersion": "2022-10-01-preview",
+              "name": "[format('{0}/{1}/{2}', parameters('namespaceName'), variables('topics')[7], 'enrollment-service')]",
+              "properties": {
+                "deadLetteringOnMessageExpiration": true,
+                "defaultMessageTimeToLive": "P14D",
+                "lockDuration": "PT1M",
+                "maxDeliveryCount": 10
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.ServiceBus/namespaces/topics', parameters('namespaceName'), variables('topics')[7])]"
+              ]
+            },
+            {
+              "type": "Microsoft.ServiceBus/namespaces/topics/subscriptions",
+              "apiVersion": "2022-10-01-preview",
+              "name": "[format('{0}/{1}/{2}', parameters('namespaceName'), variables('topics')[7], 'notification-service')]",
+              "properties": {
+                "deadLetteringOnMessageExpiration": true,
+                "defaultMessageTimeToLive": "P14D",
+                "lockDuration": "PT1M",
+                "maxDeliveryCount": 10
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.ServiceBus/namespaces/topics', parameters('namespaceName'), variables('topics')[7])]"
+              ]
+            },
+            {
+              "type": "Microsoft.ServiceBus/namespaces/AuthorizationRules",
+              "apiVersion": "2022-10-01-preview",
+              "name": "[format('{0}/{1}', parameters('namespaceName'), 'microservices-shared-access')]",
+              "properties": {
+                "rights": [
+                  "Send",
+                  "Listen"
+                ]
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.ServiceBus/namespaces', parameters('namespaceName'))]"
+              ]
+            }
+          ],
+          "outputs": {
+            "connectionString": {
+              "type": "string",
+              "metadata": {
+                "description": "The connection string for Service Bus"
+              },
+              "value": "[listKeys(resourceId('Microsoft.ServiceBus/namespaces/AuthorizationRules', parameters('namespaceName'), 'microservices-shared-access'), '2022-10-01-preview').primaryConnectionString]"
+            },
+            "namespaceName": {
+              "type": "string",
+              "metadata": {
+                "description": "The namespace name"
+              },
+              "value": "[parameters('namespaceName')]"
+            },
+            "id": {
+              "type": "string",
+              "metadata": {
+                "description": "The resource ID"
+              },
+              "value": "[resourceId('Microsoft.ServiceBus/namespaces', parameters('namespaceName'))]"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "database",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "serverName": {
+            "value": "[format('{0}-pgserver', variables('prefix'))]"
+          },
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "adminLogin": {
+            "value": "[parameters('dbAdminLogin')]"
+          },
+          "adminPassword": {
+            "value": "[parameters('dbAdminPassword')]"
+          },
+          "postgresVersion": {
+            "value": "16"
+          },
+          "tier": "[if(equals(parameters('environmentName'), 'prod'), createObject('value', 'GeneralPurpose'), createObject('value', 'Burstable'))]",
+          "skuName": "[if(equals(parameters('environmentName'), 'prod'), createObject('value', 'Standard_D2ds_v4'), createObject('value', 'Standard_B1ms'))]",
+          "storageSizeGB": "[if(equals(parameters('environmentName'), 'prod'), createObject('value', 64), createObject('value', 32))]",
+          "databaseNames": {
+            "copy": [
+              {
+                "name": "value",
+                "count": "[length(variables('services'))]",
+                "input": "[variables('services')[copyIndex('value')].dbName]"
+              }
+            ]
+          },
+          "tags": {
+            "value": "[variables('tags')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.42.1.51946",
+              "templateHash": "8409452613668854879"
+            }
+          },
+          "parameters": {
+            "serverName": {
+              "type": "string",
+              "metadata": {
+                "description": "Name of the PostgreSQL Flexible Server"
+              }
+            },
+            "location": {
+              "type": "string",
+              "defaultValue": "[resourceGroup().location]",
+              "metadata": {
+                "description": "Location for resources"
+              }
+            },
+            "databaseNames": {
+              "type": "array",
+              "metadata": {
+                "description": "Database names to create on this server"
+              }
+            },
+            "adminLogin": {
+              "type": "securestring",
+              "metadata": {
+                "description": "Administrator login username"
+              }
+            },
+            "adminPassword": {
+              "type": "securestring",
+              "metadata": {
+                "description": "Administrator login password"
+              }
+            },
+            "postgresVersion": {
+              "type": "string",
+              "defaultValue": "16",
+              "allowedValues": [
+                "14",
+                "15",
+                "16"
+              ],
+              "metadata": {
+                "description": "PostgreSQL version"
+              }
+            },
+            "tier": {
+              "type": "string",
+              "defaultValue": "Burstable",
+              "allowedValues": [
+                "Burstable",
+                "GeneralPurpose",
+                "MemoryOptimized"
+              ],
+              "metadata": {
+                "description": "Compute tier"
+              }
+            },
+            "skuName": {
+              "type": "string",
+              "defaultValue": "Standard_B1ms",
+              "metadata": {
+                "description": "Compute SKU name"
+              }
+            },
+            "storageSizeGB": {
+              "type": "int",
+              "defaultValue": 32,
+              "metadata": {
+                "description": "Storage size in GB"
+              }
+            },
+            "tags": {
+              "type": "object",
+              "defaultValue": {},
+              "metadata": {
+                "description": "Tags for the resource"
+              }
+            },
+            "subnetId": {
+              "type": "string",
+              "defaultValue": "",
+              "metadata": {
+                "description": "Virtual Network subnet ID for private access (optional)"
+              }
+            },
+            "privateDnsZoneId": {
+              "type": "string",
+              "defaultValue": "",
+              "metadata": {
+                "description": "Private DNS Zone ID for PostgreSQL (optional)"
+              }
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.DBforPostgreSQL/flexibleServers",
+              "apiVersion": "2023-06-01-preview",
+              "name": "[parameters('serverName')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "sku": {
+                "name": "[parameters('skuName')]",
+                "tier": "[parameters('tier')]"
+              },
+              "properties": {
+                "version": "[parameters('postgresVersion')]",
+                "administratorLogin": "[parameters('adminLogin')]",
+                "administratorLoginPassword": "[parameters('adminPassword')]",
+                "storage": {
+                  "storageSizeGB": "[parameters('storageSizeGB')]",
+                  "autoGrow": "Enabled"
+                },
+                "backup": {
+                  "backupRetentionDays": 7,
+                  "geoRedundantBackup": "Disabled"
+                },
+                "highAvailability": {
+                  "mode": "Disabled"
+                },
+                "network": "[if(not(empty(parameters('subnetId'))), createObject('delegatedSubnetResourceId', parameters('subnetId'), 'privateDnsZoneArmResourceId', parameters('privateDnsZoneId')), createObject())]",
+                "authConfig": {
+                  "activeDirectoryAuth": "Disabled",
+                  "passwordAuth": "Enabled"
+                }
+              }
+            },
+            {
+              "condition": "[empty(parameters('subnetId'))]",
+              "type": "Microsoft.DBforPostgreSQL/flexibleServers/firewallRules",
+              "apiVersion": "2023-06-01-preview",
+              "name": "[format('{0}/{1}', parameters('serverName'), 'AllowAzureServices')]",
+              "properties": {
+                "startIpAddress": "0.0.0.0",
+                "endIpAddress": "0.0.0.0"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.DBforPostgreSQL/flexibleServers', parameters('serverName'))]"
+              ]
+            },
+            {
+              "copy": {
+                "name": "databases",
+                "count": "[length(parameters('databaseNames'))]"
+              },
+              "type": "Microsoft.DBforPostgreSQL/flexibleServers/databases",
+              "apiVersion": "2023-06-01-preview",
+              "name": "[format('{0}/{1}', parameters('serverName'), parameters('databaseNames')[copyIndex()])]",
+              "properties": {
+                "charset": "UTF8",
+                "collation": "en_US.utf8"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.DBforPostgreSQL/flexibleServers', parameters('serverName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.DBforPostgreSQL/flexibleServers/configurations",
+              "apiVersion": "2023-06-01-preview",
+              "name": "[format('{0}/{1}', parameters('serverName'), 'log_connections')]",
+              "properties": {
+                "value": "on",
+                "source": "user-override"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.DBforPostgreSQL/flexibleServers', parameters('serverName'))]"
+              ]
+            }
+          ],
+          "outputs": {
+            "fqdn": {
+              "type": "string",
+              "metadata": {
+                "description": "The FQDN of the PostgreSQL server"
+              },
+              "value": "[reference(resourceId('Microsoft.DBforPostgreSQL/flexibleServers', parameters('serverName')), '2023-06-01-preview').fullyQualifiedDomainName]"
+            },
+            "serverName": {
+              "type": "string",
+              "metadata": {
+                "description": "The server name"
+              },
+              "value": "[parameters('serverName')]"
+            },
+            "id": {
+              "type": "string",
+              "metadata": {
+                "description": "The resource ID"
+              },
+              "value": "[resourceId('Microsoft.DBforPostgreSQL/flexibleServers', parameters('serverName'))]"
+            },
+            "jdbcTemplate": {
+              "type": "string",
+              "metadata": {
+                "description": "JDBC connection string template"
+              },
+              "value": "[format('jdbc:postgresql://{0}:5432/{{dbName}}?sslmode=require', reference(resourceId('Microsoft.DBforPostgreSQL/flexibleServers', parameters('serverName')), '2023-06-01-preview').fullyQualifiedDomainName)]"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "api-gateway",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "appName": {
+            "value": "[format('{0}-api-gateway', variables('prefix'))]"
+          },
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "environmentId": {
+            "value": "[resourceId('Microsoft.App/managedEnvironments', format('{0}-env', variables('prefix')))]"
+          },
+          "containerImage": {
+            "value": "[format('{0}/eduverse/api-gateway:{1}', reference(resourceId('Microsoft.ContainerRegistry/registries', replace(format('{0}acr', variables('prefix')), '-', '')), '2023-07-01').loginServer, parameters('imageTag'))]"
+          },
+          "containerPort": {
+            "value": 8090
+          },
+          "acrLoginServer": {
+            "value": "[reference(resourceId('Microsoft.ContainerRegistry/registries', replace(format('{0}acr', variables('prefix')), '-', '')), '2023-07-01').loginServer]"
+          },
+          "identityId": {
+            "value": "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-acr-pull-identity', variables('prefix')))]"
+          },
+          "externalIngress": {
+            "value": true
+          },
+          "cpu": "[if(equals(parameters('environmentName'), 'prod'), createObject('value', '1.0'), createObject('value', '0.5'))]",
+          "memory": "[if(equals(parameters('environmentName'), 'prod'), createObject('value', '2Gi'), createObject('value', '1Gi'))]",
+          "minReplicas": "[if(equals(parameters('environmentName'), 'prod'), createObject('value', 2), createObject('value', 1))]",
+          "maxReplicas": "[if(equals(parameters('environmentName'), 'prod'), createObject('value', 10), createObject('value', 3))]",
+          "tags": {
+            "value": "[variables('tags')]"
+          },
+          "envVars": {
+            "value": [
+              {
+                "name": "COURSE_CATALOG_SERVICE_URL",
+                "value": "[format('https://{0}-course-catalog.internal.{1}', variables('prefix'), reference(resourceId('Microsoft.App/managedEnvironments', format('{0}-env', variables('prefix'))), '2023-11-02-preview').defaultDomain)]"
+              },
+              {
+                "name": "ENROLLMENT_SERVICE_URL",
+                "value": "[format('https://{0}-enrollment.internal.{1}', variables('prefix'), reference(resourceId('Microsoft.App/managedEnvironments', format('{0}-env', variables('prefix'))), '2023-11-02-preview').defaultDomain)]"
+              },
+              {
+                "name": "ASSESSMENT_SERVICE_URL",
+                "value": "[format('https://{0}-assessment.internal.{1}', variables('prefix'), reference(resourceId('Microsoft.App/managedEnvironments', format('{0}-env', variables('prefix'))), '2023-11-02-preview').defaultDomain)]"
+              },
+              {
+                "name": "VIDEO_SERVICE_URL",
+                "value": "[format('https://{0}-video.internal.{1}', variables('prefix'), reference(resourceId('Microsoft.App/managedEnvironments', format('{0}-env', variables('prefix'))), '2023-11-02-preview').defaultDomain)]"
+              },
+              {
+                "name": "CERTIFICATE_SERVICE_URL",
+                "value": "[format('https://{0}-certificate.internal.{1}', variables('prefix'), reference(resourceId('Microsoft.App/managedEnvironments', format('{0}-env', variables('prefix'))), '2023-11-02-preview').defaultDomain)]"
+              },
+              {
+                "name": "PAYMENT_SERVICE_URL",
+                "value": "[format('https://{0}-payment.internal.{1}', variables('prefix'), reference(resourceId('Microsoft.App/managedEnvironments', format('{0}-env', variables('prefix'))), '2023-11-02-preview').defaultDomain)]"
+              },
+              {
+                "name": "NOTIFICATION_SERVICE_URL",
+                "value": "[format('https://{0}-notification.internal.{1}', variables('prefix'), reference(resourceId('Microsoft.App/managedEnvironments', format('{0}-env', variables('prefix'))), '2023-11-02-preview').defaultDomain)]"
+              },
+              {
+                "name": "PROGRESS_SERVICE_URL",
+                "value": "[format('https://{0}-progress.internal.{1}', variables('prefix'), reference(resourceId('Microsoft.App/managedEnvironments', format('{0}-env', variables('prefix'))), '2023-11-02-preview').defaultDomain)]"
+              }
+            ]
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.42.1.51946",
+              "templateHash": "1940311283923255284"
+            }
+          },
+          "parameters": {
+            "appName": {
+              "type": "string",
+              "metadata": {
+                "description": "Name of the container app"
+              }
+            },
+            "location": {
+              "type": "string",
+              "defaultValue": "[resourceGroup().location]",
+              "metadata": {
+                "description": "Location for resources"
+              }
+            },
+            "environmentId": {
+              "type": "string",
+              "metadata": {
+                "description": "Container Apps Environment ID"
+              }
+            },
+            "containerImage": {
+              "type": "string",
+              "metadata": {
+                "description": "Container image to deploy"
+              }
+            },
+            "containerPort": {
+              "type": "int",
+              "metadata": {
+                "description": "Container port"
+              }
+            },
+            "acrLoginServer": {
+              "type": "string",
+              "metadata": {
+                "description": "Azure Container Registry login server"
+              }
+            },
+            "identityId": {
+              "type": "string",
+              "metadata": {
+                "description": "User-assigned managed identity ID for ACR pull"
+              }
+            },
+            "envVars": {
+              "type": "array",
+              "defaultValue": [],
+              "metadata": {
+                "description": "Environment variables for the container"
+              }
+            },
+            "cpu": {
+              "type": "string",
+              "defaultValue": "0.5",
+              "metadata": {
+                "description": "CPU cores allocated to the container (e.g., 0.5)"
+              }
+            },
+            "memory": {
+              "type": "string",
+              "defaultValue": "1Gi",
+              "metadata": {
+                "description": "Memory allocated to the container (e.g., 1Gi)"
+              }
+            },
+            "minReplicas": {
+              "type": "int",
+              "defaultValue": 1,
+              "metadata": {
+                "description": "Minimum number of replicas"
+              }
+            },
+            "maxReplicas": {
+              "type": "int",
+              "defaultValue": 3,
+              "metadata": {
+                "description": "Maximum number of replicas"
+              }
+            },
+            "externalIngress": {
+              "type": "bool",
+              "defaultValue": false,
+              "metadata": {
+                "description": "Enable external ingress"
+              }
+            },
+            "tags": {
+              "type": "object",
+              "defaultValue": {},
+              "metadata": {
+                "description": "Tags for the resource"
+              }
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.App/containerApps",
+              "apiVersion": "2023-11-02-preview",
+              "name": "[parameters('appName')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "identity": {
+                "type": "UserAssigned",
+                "userAssignedIdentities": {
+                  "[format('{0}', parameters('identityId'))]": {}
+                }
+              },
+              "properties": {
+                "managedEnvironmentId": "[parameters('environmentId')]",
+                "configuration": {
+                  "activeRevisionsMode": "Single",
+                  "ingress": {
+                    "external": "[parameters('externalIngress')]",
+                    "targetPort": "[parameters('containerPort')]",
+                    "transport": "auto",
+                    "allowInsecure": false,
+                    "traffic": [
+                      {
+                        "weight": 100,
+                        "latestRevision": true
+                      }
+                    ]
+                  },
+                  "registries": [
+                    {
+                      "server": "[parameters('acrLoginServer')]",
+                      "identity": "[parameters('identityId')]"
+                    }
+                  ]
+                },
+                "template": {
+                  "containers": [
+                    {
+                      "name": "[parameters('appName')]",
+                      "image": "[parameters('containerImage')]",
+                      "resources": {
+                        "cpu": "[json(parameters('cpu'))]",
+                        "memory": "[parameters('memory')]"
+                      },
+                      "env": "[parameters('envVars')]",
+                      "probes": [
+                        {
+                          "type": "Liveness",
+                          "httpGet": {
+                            "path": "/actuator/health",
+                            "port": "[parameters('containerPort')]",
+                            "scheme": "HTTP"
+                          },
+                          "initialDelaySeconds": 30,
+                          "periodSeconds": 15,
+                          "failureThreshold": 3
+                        },
+                        {
+                          "type": "Readiness",
+                          "httpGet": {
+                            "path": "/actuator/health",
+                            "port": "[parameters('containerPort')]",
+                            "scheme": "HTTP"
+                          },
+                          "initialDelaySeconds": 15,
+                          "periodSeconds": 10,
+                          "failureThreshold": 3
+                        },
+                        {
+                          "type": "Startup",
+                          "httpGet": {
+                            "path": "/actuator/health",
+                            "port": "[parameters('containerPort')]",
+                            "scheme": "HTTP"
+                          },
+                          "initialDelaySeconds": 10,
+                          "periodSeconds": 10,
+                          "failureThreshold": 30
+                        }
+                      ]
+                    }
+                  ],
+                  "scale": {
+                    "minReplicas": "[parameters('minReplicas')]",
+                    "maxReplicas": "[parameters('maxReplicas')]",
+                    "rules": [
+                      {
+                        "name": "http-scaling",
+                        "http": {
+                          "metadata": {
+                            "concurrentRequests": "50"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          ],
+          "outputs": {
+            "fqdn": {
+              "type": "string",
+              "metadata": {
+                "description": "The FQDN of the container app"
+              },
+              "value": "[reference(resourceId('Microsoft.App/containerApps', parameters('appName')), '2023-11-02-preview').configuration.ingress.fqdn]"
+            },
+            "id": {
+              "type": "string",
+              "metadata": {
+                "description": "The resource ID of the container app"
+              },
+              "value": "[resourceId('Microsoft.App/containerApps', parameters('appName'))]"
+            },
+            "name": {
+              "type": "string",
+              "metadata": {
+                "description": "The name of the container app"
+              },
+              "value": "[parameters('appName')]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.ContainerRegistry/registries', replace(format('{0}acr', variables('prefix')), '-', ''))]",
+        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-acr-pull-identity', variables('prefix')))]",
+        "[extensionResourceId(resourceId('Microsoft.ContainerRegistry/registries', replace(format('{0}acr', variables('prefix')), '-', '')), 'Microsoft.Authorization/roleAssignments', guid(resourceId('Microsoft.ContainerRegistry/registries', replace(format('{0}acr', variables('prefix')), '-', '')), resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-acr-pull-identity', variables('prefix'))), 'AcrPull'))]",
+        "[resourceId('Microsoft.App/managedEnvironments', format('{0}-env', variables('prefix')))]"
+      ]
+    },
+    {
+      "copy": {
+        "name": "microservices",
+        "count": "[length(variables('services'))]"
+      },
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "[variables('services')[copyIndex()].name]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "appName": {
+            "value": "[format('{0}-{1}', variables('prefix'), variables('services')[copyIndex()].name)]"
+          },
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "environmentId": {
+            "value": "[resourceId('Microsoft.App/managedEnvironments', format('{0}-env', variables('prefix')))]"
+          },
+          "containerImage": {
+            "value": "[format('{0}/eduverse/{1}-service:{2}', reference(resourceId('Microsoft.ContainerRegistry/registries', replace(format('{0}acr', variables('prefix')), '-', '')), '2023-07-01').loginServer, variables('services')[copyIndex()].name, parameters('imageTag'))]"
+          },
+          "containerPort": {
+            "value": "[variables('services')[copyIndex()].port]"
+          },
+          "acrLoginServer": {
+            "value": "[reference(resourceId('Microsoft.ContainerRegistry/registries', replace(format('{0}acr', variables('prefix')), '-', '')), '2023-07-01').loginServer]"
+          },
+          "identityId": {
+            "value": "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-acr-pull-identity', variables('prefix')))]"
+          },
+          "externalIngress": {
+            "value": false
+          },
+          "cpu": "[if(equals(parameters('environmentName'), 'prod'), createObject('value', '0.5'), createObject('value', '0.25'))]",
+          "memory": "[if(equals(parameters('environmentName'), 'prod'), createObject('value', '1Gi'), createObject('value', '0.5Gi'))]",
+          "minReplicas": "[if(equals(parameters('environmentName'), 'prod'), createObject('value', 2), createObject('value', 1))]",
+          "maxReplicas": "[if(equals(parameters('environmentName'), 'prod'), createObject('value', 5), createObject('value', 3))]",
+          "tags": {
+            "value": "[variables('tags')]"
+          },
+          "envVars": {
+            "value": [
+              {
+                "name": "SPRING_PROFILES_ACTIVE",
+                "value": "azure"
+              },
+              {
+                "name": "SERVER_PORT",
+                "value": "[format('{0}', variables('services')[copyIndex()].port)]"
+              },
+              {
+                "name": "DB_URL",
+                "value": "[format('jdbc:postgresql://{0}:5432/{1}?sslmode=require', reference(resourceId('Microsoft.Resources/deployments', 'database'), '2025-04-01').outputs.fqdn.value, variables('services')[copyIndex()].dbName)]"
+              },
+              {
+                "name": "DB_USERNAME",
+                "value": "[parameters('dbAdminLogin')]"
+              },
+              {
+                "name": "DB_PASSWORD",
+                "secretRef": "db-password"
+              },
+              {
+                "name": "SERVICEBUS_CONNECTION_STRING",
+                "secretRef": "servicebus-connection-string"
+              }
+            ]
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.42.1.51946",
+              "templateHash": "1940311283923255284"
+            }
+          },
+          "parameters": {
+            "appName": {
+              "type": "string",
+              "metadata": {
+                "description": "Name of the container app"
+              }
+            },
+            "location": {
+              "type": "string",
+              "defaultValue": "[resourceGroup().location]",
+              "metadata": {
+                "description": "Location for resources"
+              }
+            },
+            "environmentId": {
+              "type": "string",
+              "metadata": {
+                "description": "Container Apps Environment ID"
+              }
+            },
+            "containerImage": {
+              "type": "string",
+              "metadata": {
+                "description": "Container image to deploy"
+              }
+            },
+            "containerPort": {
+              "type": "int",
+              "metadata": {
+                "description": "Container port"
+              }
+            },
+            "acrLoginServer": {
+              "type": "string",
+              "metadata": {
+                "description": "Azure Container Registry login server"
+              }
+            },
+            "identityId": {
+              "type": "string",
+              "metadata": {
+                "description": "User-assigned managed identity ID for ACR pull"
+              }
+            },
+            "envVars": {
+              "type": "array",
+              "defaultValue": [],
+              "metadata": {
+                "description": "Environment variables for the container"
+              }
+            },
+            "cpu": {
+              "type": "string",
+              "defaultValue": "0.5",
+              "metadata": {
+                "description": "CPU cores allocated to the container (e.g., 0.5)"
+              }
+            },
+            "memory": {
+              "type": "string",
+              "defaultValue": "1Gi",
+              "metadata": {
+                "description": "Memory allocated to the container (e.g., 1Gi)"
+              }
+            },
+            "minReplicas": {
+              "type": "int",
+              "defaultValue": 1,
+              "metadata": {
+                "description": "Minimum number of replicas"
+              }
+            },
+            "maxReplicas": {
+              "type": "int",
+              "defaultValue": 3,
+              "metadata": {
+                "description": "Maximum number of replicas"
+              }
+            },
+            "externalIngress": {
+              "type": "bool",
+              "defaultValue": false,
+              "metadata": {
+                "description": "Enable external ingress"
+              }
+            },
+            "tags": {
+              "type": "object",
+              "defaultValue": {},
+              "metadata": {
+                "description": "Tags for the resource"
+              }
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.App/containerApps",
+              "apiVersion": "2023-11-02-preview",
+              "name": "[parameters('appName')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "identity": {
+                "type": "UserAssigned",
+                "userAssignedIdentities": {
+                  "[format('{0}', parameters('identityId'))]": {}
+                }
+              },
+              "properties": {
+                "managedEnvironmentId": "[parameters('environmentId')]",
+                "configuration": {
+                  "activeRevisionsMode": "Single",
+                  "ingress": {
+                    "external": "[parameters('externalIngress')]",
+                    "targetPort": "[parameters('containerPort')]",
+                    "transport": "auto",
+                    "allowInsecure": false,
+                    "traffic": [
+                      {
+                        "weight": 100,
+                        "latestRevision": true
+                      }
+                    ]
+                  },
+                  "registries": [
+                    {
+                      "server": "[parameters('acrLoginServer')]",
+                      "identity": "[parameters('identityId')]"
+                    }
+                  ]
+                },
+                "template": {
+                  "containers": [
+                    {
+                      "name": "[parameters('appName')]",
+                      "image": "[parameters('containerImage')]",
+                      "resources": {
+                        "cpu": "[json(parameters('cpu'))]",
+                        "memory": "[parameters('memory')]"
+                      },
+                      "env": "[parameters('envVars')]",
+                      "probes": [
+                        {
+                          "type": "Liveness",
+                          "httpGet": {
+                            "path": "/actuator/health",
+                            "port": "[parameters('containerPort')]",
+                            "scheme": "HTTP"
+                          },
+                          "initialDelaySeconds": 30,
+                          "periodSeconds": 15,
+                          "failureThreshold": 3
+                        },
+                        {
+                          "type": "Readiness",
+                          "httpGet": {
+                            "path": "/actuator/health",
+                            "port": "[parameters('containerPort')]",
+                            "scheme": "HTTP"
+                          },
+                          "initialDelaySeconds": 15,
+                          "periodSeconds": 10,
+                          "failureThreshold": 3
+                        },
+                        {
+                          "type": "Startup",
+                          "httpGet": {
+                            "path": "/actuator/health",
+                            "port": "[parameters('containerPort')]",
+                            "scheme": "HTTP"
+                          },
+                          "initialDelaySeconds": 10,
+                          "periodSeconds": 10,
+                          "failureThreshold": 30
+                        }
+                      ]
+                    }
+                  ],
+                  "scale": {
+                    "minReplicas": "[parameters('minReplicas')]",
+                    "maxReplicas": "[parameters('maxReplicas')]",
+                    "rules": [
+                      {
+                        "name": "http-scaling",
+                        "http": {
+                          "metadata": {
+                            "concurrentRequests": "50"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          ],
+          "outputs": {
+            "fqdn": {
+              "type": "string",
+              "metadata": {
+                "description": "The FQDN of the container app"
+              },
+              "value": "[reference(resourceId('Microsoft.App/containerApps', parameters('appName')), '2023-11-02-preview').configuration.ingress.fqdn]"
+            },
+            "id": {
+              "type": "string",
+              "metadata": {
+                "description": "The resource ID of the container app"
+              },
+              "value": "[resourceId('Microsoft.App/containerApps', parameters('appName'))]"
+            },
+            "name": {
+              "type": "string",
+              "metadata": {
+                "description": "The name of the container app"
+              },
+              "value": "[parameters('appName')]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.ContainerRegistry/registries', replace(format('{0}acr', variables('prefix')), '-', ''))]",
+        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-acr-pull-identity', variables('prefix')))]",
+        "[extensionResourceId(resourceId('Microsoft.ContainerRegistry/registries', replace(format('{0}acr', variables('prefix')), '-', '')), 'Microsoft.Authorization/roleAssignments', guid(resourceId('Microsoft.ContainerRegistry/registries', replace(format('{0}acr', variables('prefix')), '-', '')), resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-acr-pull-identity', variables('prefix'))), 'AcrPull'))]",
+        "[resourceId('Microsoft.App/managedEnvironments', format('{0}-env', variables('prefix')))]",
+        "[resourceId('Microsoft.Resources/deployments', 'database')]",
+        "[resourceId('Microsoft.Resources/deployments', 'serviceBus')]"
+      ]
+    }
+  ],
+  "outputs": {
+    "acrLoginServer": {
+      "type": "string",
+      "metadata": {
+        "description": "Container Registry login server"
+      },
+      "value": "[reference(resourceId('Microsoft.ContainerRegistry/registries', replace(format('{0}acr', variables('prefix')), '-', '')), '2023-07-01').loginServer]"
+    },
+    "apiGatewayFqdn": {
+      "type": "string",
+      "metadata": {
+        "description": "API Gateway FQDN"
+      },
+      "value": "[reference(resourceId('Microsoft.Resources/deployments', 'api-gateway'), '2025-04-01').outputs.fqdn.value]"
+    },
+    "environmentDomain": {
+      "type": "string",
+      "metadata": {
+        "description": "Container Apps Environment default domain"
+      },
+      "value": "[reference(resourceId('Microsoft.App/managedEnvironments', format('{0}-env', variables('prefix'))), '2023-11-02-preview').defaultDomain]"
+    },
+    "databaseFqdn": {
+      "type": "string",
+      "metadata": {
+        "description": "PostgreSQL server FQDN"
+      },
+      "value": "[reference(resourceId('Microsoft.Resources/deployments', 'database'), '2025-04-01').outputs.fqdn.value]"
+    },
+    "serviceBusNamespace": {
+      "type": "string",
+      "metadata": {
+        "description": "Service Bus namespace name"
+      },
+      "value": "[reference(resourceId('Microsoft.Resources/deployments', 'serviceBus'), '2025-04-01').outputs.namespaceName.value]"
+    },
+    "apimGatewayUrl": {
+      "type": "string",
+      "metadata": {
+        "description": "API Management gateway URL (prod only)"
+      },
+      "value": "[if(equals(parameters('environmentName'), 'prod'), reference(resourceId('Microsoft.ApiManagement/service', format('{0}-apim', variables('prefix'))), '2023-05-01-preview').gatewayUrl, 'N/A - APIM not deployed')]"
+    }
+  }
+}

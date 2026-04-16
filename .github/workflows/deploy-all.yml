@@ -1,0 +1,317 @@
+# =============================================================================
+# EduVerse Academy — CI/CD Pipeline
+# Builds all 8 microservices + API gateway, pushes to ACR, deploys to
+# Azure Container Apps
+# =============================================================================
+
+name: Deploy All Services
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - staging
+          - prod
+      image_tag:
+        description: 'Image tag (default: git SHA)'
+        required: false
+        type: string
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AZURE_RESOURCE_GROUP: rg-eduverse-${{ inputs.environment || 'dev' }}
+  ENVIRONMENT: ${{ inputs.environment || 'dev' }}
+  IMAGE_TAG: ${{ inputs.image_tag || github.sha }}
+
+jobs:
+  # ── Build shared-events library ─────────────────────────────────────────────
+  build-shared-events:
+    name: Build shared-events
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Build shared-events
+        run: |
+          cd shared-events
+          mvn clean install -DskipTests --no-transfer-progress
+
+      - name: Upload shared-events artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: shared-events-jar
+          path: shared-events/target/shared-events-1.0.0.jar
+          retention-days: 1
+
+  # ── Build and push Docker images ────────────────────────────────────────────
+  build-and-push:
+    name: Build ${{ matrix.service }}
+    runs-on: ubuntu-latest
+    needs: [build-shared-events, deploy-infrastructure]
+    strategy:
+      matrix:
+        include:
+          - service: api-gateway
+            context: ./api-gateway
+            image: eduverse/api-gateway
+            needs-shared-events: false
+          - service: notification-service
+            context: ./notification-service
+            image: eduverse/notification-service
+            needs-shared-events: true
+          - service: course-catalog-service
+            context: ./course-catalog-service
+            image: eduverse/course-catalog-service
+            needs-shared-events: true
+          - service: payment-service
+            context: ./payment-service
+            image: eduverse/payment-service
+            needs-shared-events: true
+          - service: video-service
+            context: ./video-service
+            image: eduverse/video-service
+            needs-shared-events: true
+          - service: certificate-service
+            context: ./certificate-service
+            image: eduverse/certificate-service
+            needs-shared-events: true
+          - service: assessment-service
+            context: ./assessment-service
+            image: eduverse/assessment-service
+            needs-shared-events: true
+          - service: progress-service
+            context: ./progress-service
+            image: eduverse/progress-service
+            needs-shared-events: true
+          - service: enrollment-service
+            context: ./enrollment-service
+            image: eduverse/enrollment-service
+            needs-shared-events: true
+      fail-fast: false
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download shared-events artifact
+        if: matrix.needs-shared-events
+        uses: actions/download-artifact@v4
+        with:
+          name: shared-events-jar
+          path: shared-events/target/
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Get ACR login server
+        id: acr
+        run: |
+          ACR_LOGIN_SERVER=${{ needs.deploy-infrastructure.outputs.acr-login-server }}
+          ACR_NAME=$(echo $ACR_LOGIN_SERVER | cut -d. -f1)
+          echo "login_server=$ACR_LOGIN_SERVER" >> $GITHUB_OUTPUT
+          echo "name=$ACR_NAME" >> $GITHUB_OUTPUT
+
+      - name: ACR Login
+        run: az acr login -n ${{ steps.acr.outputs.name }}
+
+      - name: Build shared-events Docker stage
+        if: matrix.needs-shared-events
+        run: |
+          cd shared-events
+          docker build -t shared-events -f - . <<'EOF'
+          FROM eclipse-temurin:21-jdk AS shared-events
+          WORKDIR /app
+          COPY target/shared-events-1.0.0.jar /app/target/shared-events-1.0.0.jar
+          EOF
+
+      - name: Build and push Docker image
+        run: |
+          FULL_IMAGE=${{ steps.acr.outputs.login_server }}/${{ matrix.image }}
+          docker build \
+            -t ${FULL_IMAGE}:${{ env.IMAGE_TAG }} \
+            -t ${FULL_IMAGE}:latest \
+            ${{ matrix.context }}
+          docker push ${FULL_IMAGE}:${{ env.IMAGE_TAG }}
+          docker push ${FULL_IMAGE}:latest
+
+  # ── Deploy infrastructure with Bicep ────────────────────────────────────────
+  deploy-infrastructure:
+    name: Deploy Infrastructure
+    runs-on: ubuntu-latest
+    outputs:
+      acr-login-server: ${{ steps.deploy.outputs.acrLoginServer }}
+      api-gateway-fqdn: ${{ steps.deploy.outputs.apiGatewayFqdn }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Create resource group
+        run: |
+          az group create \
+            --name ${{ env.AZURE_RESOURCE_GROUP }} \
+            --location eastus \
+            --tags project=eduverse-academy environment=${{ env.ENVIRONMENT }}
+
+      - name: Deploy Bicep template
+        id: deploy
+        run: |
+          RESULT=$(az deployment group create \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --template-file deployment/azure/main.bicep \
+            --parameters \
+              environmentName=${{ env.ENVIRONMENT }} \
+              dbAdminLogin=${{ secrets.DB_ADMIN_LOGIN }} \
+              dbAdminPassword=${{ secrets.DB_ADMIN_PASSWORD }} \
+              imageTag=${{ env.IMAGE_TAG }} \
+            --query properties.outputs -o json)
+
+          echo "acrLoginServer=$(echo $RESULT | jq -r '.acrLoginServer.value')" >> $GITHUB_OUTPUT
+          echo "apiGatewayFqdn=$(echo $RESULT | jq -r '.apiGatewayFqdn.value')" >> $GITHUB_OUTPUT
+
+  # ── Deploy services to Container Apps ───────────────────────────────────────
+  deploy-services:
+    name: Deploy to Container Apps
+    runs-on: ubuntu-latest
+    needs: [build-and-push, deploy-infrastructure]
+    if: github.ref == 'refs/heads/main'
+    strategy:
+      matrix:
+        include:
+          - service: api-gateway
+            app-name-suffix: api-gateway
+          - service: notification-service
+            app-name-suffix: notification
+          - service: course-catalog-service
+            app-name-suffix: course-catalog
+          - service: payment-service
+            app-name-suffix: payment
+          - service: video-service
+            app-name-suffix: video
+          - service: certificate-service
+            app-name-suffix: certificate
+          - service: assessment-service
+            app-name-suffix: assessment
+          - service: progress-service
+            app-name-suffix: progress
+          - service: enrollment-service
+            app-name-suffix: enrollment
+      max-parallel: 4
+
+    steps:
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy revision
+        run: |
+          APP_NAME="eduverse-${{ env.ENVIRONMENT }}-${{ matrix.app-name-suffix }}"
+          IMAGE="${{ needs.deploy-infrastructure.outputs.acr-login-server }}/eduverse/${{ matrix.service }}:${{ env.IMAGE_TAG }}"
+
+          az containerapp update \
+            --name $APP_NAME \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --image $IMAGE
+
+      - name: Verify deployment health
+        run: |
+          APP_NAME="eduverse-${{ env.ENVIRONMENT }}-${{ matrix.app-name-suffix }}"
+
+          for i in {1..30}; do
+            STATUS=$(az containerapp revision list \
+              --name $APP_NAME \
+              --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+              --query "[0].properties.runningState" -o tsv)
+
+            if [ "$STATUS" == "Running" ]; then
+              echo "✅ $APP_NAME is running"
+              exit 0
+            fi
+            echo "⏳ Waiting for $APP_NAME... (attempt $i/30, status: $STATUS)"
+            sleep 10
+          done
+          echo "❌ Deployment health check timed out for $APP_NAME"
+          exit 1
+
+  # ── Smoke Tests ─────────────────────────────────────────────────────────────
+  smoke-tests:
+    name: Smoke Tests
+    runs-on: ubuntu-latest
+    needs: deploy-services
+    steps:
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Get API Gateway URL
+        id: gateway
+        run: |
+          FQDN=$(az containerapp show \
+            --name "eduverse-${{ env.ENVIRONMENT }}-api-gateway" \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --query properties.configuration.ingress.fqdn -o tsv)
+          echo "url=https://${FQDN}" >> $GITHUB_OUTPUT
+
+      - name: Health checks
+        run: |
+          GATEWAY_URL=${{ steps.gateway.outputs.url }}
+          ENDPOINTS=(
+            "/actuator/health"
+            "/api/courses"
+            "/api/enrollments"
+            "/api/assessments"
+            "/api/videos"
+            "/api/certificates"
+            "/api/payments"
+            "/api/notifications"
+            "/api/progress"
+          )
+
+          FAILED=0
+          for endpoint in "${ENDPOINTS[@]}"; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${GATEWAY_URL}${endpoint}" --max-time 10 || echo "000")
+            if [[ "$STATUS" =~ ^(200|401|403)$ ]]; then
+              echo "✅ ${endpoint} — HTTP ${STATUS}"
+            else
+              echo "❌ ${endpoint} — HTTP ${STATUS}"
+              FAILED=$((FAILED + 1))
+            fi
+          done
+
+          if [ $FAILED -gt 0 ]; then
+            echo "::error::${FAILED} smoke test(s) failed"
+            exit 1
+          fi
+          echo "🎉 All smoke tests passed"
