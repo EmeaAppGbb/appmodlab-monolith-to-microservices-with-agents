@@ -1,0 +1,38 @@
+# =============================================================================
+# EduVerse Academy - Docker Compose Override (Strangler Fig Gateway)
+#
+# Adds the API Gateway alongside the monolith. The gateway fronts all traffic
+# and routes to the monolith by default. As microservices are extracted,
+# routes are updated to point to the new services.
+#
+# Usage:
+#   docker-compose -f docker-compose.yml -f docker-compose.override.yml up -d
+#   curl http://localhost:8090/api/courses    # Through gateway
+#   curl http://localhost:8080/api/courses    # Direct to monolith
+# =============================================================================
+
+version: "3.9"
+
+services:
+  # ---------- API Gateway (Strangler Fig) ----------
+  gateway:
+    build:
+      context: ../api-gateway
+      dockerfile: Dockerfile
+    container_name: eduverse-gateway
+    depends_on:
+      app:
+        condition: service_started
+    ports:
+      - "8090:8090"
+    environment:
+      MONOLITH_URL: http://eduverse-app:8080
+      SPRING_PROFILES_ACTIVE: docker
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8090/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - eduverse-net

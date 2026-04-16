@@ -1,0 +1,136 @@
+spring:
+  application:
+    name: eduverse-api-gateway
+  cloud:
+    gateway:
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins: "*"
+            allowedMethods: "*"
+            allowedHeaders: "*"
+      routes:
+        # Course Catalog routes
+        - id: courses
+          uri: ${MONOLITH_URL:http://localhost:8080}
+          predicates:
+            - Path=/api/courses/**
+          filters:
+            - StripPrefix=0
+          metadata:
+            feature-flag: ff-course-catalog
+            target-service: course-catalog-service
+            description: "Course catalog and management APIs"
+
+        # Enrollment routes
+        - id: enrollments
+          uri: ${MONOLITH_URL:http://localhost:8080}
+          predicates:
+            - Path=/api/enrollments/**
+          filters:
+            - StripPrefix=0
+          metadata:
+            feature-flag: ff-enrollment-service
+            target-service: enrollment-service
+            description: "Student enrollment lifecycle APIs"
+
+        # Assessment routes
+        - id: assessments
+          uri: ${MONOLITH_URL:http://localhost:8080}
+          predicates:
+            - Path=/api/assessments/**
+          filters:
+            - StripPrefix=0
+          metadata:
+            feature-flag: ff-assessment-service
+            target-service: assessment-service
+            description: "Quiz, exam, and assignment APIs"
+
+        # Video routes
+        - id: videos
+          uri: ${MONOLITH_URL:http://localhost:8080}
+          predicates:
+            - Path=/api/videos/**
+          filters:
+            - StripPrefix=0
+          metadata:
+            feature-flag: ff-video-service
+            target-service: video-service
+            description: "Video upload, processing, and streaming APIs"
+
+        # Certificate routes
+        - id: certificates
+          uri: ${MONOLITH_URL:http://localhost:8080}
+          predicates:
+            - Path=/api/certificates/**
+          filters:
+            - StripPrefix=0
+          metadata:
+            feature-flag: ff-certificate-service
+            target-service: certificate-service
+            description: "Certificate generation and download APIs"
+
+        # Payment routes
+        - id: payments
+          uri: ${MONOLITH_URL:http://localhost:8080}
+          predicates:
+            - Path=/api/payments/**
+          filters:
+            - StripPrefix=0
+          metadata:
+            feature-flag: ff-payment-service
+            target-service: payment-service
+            description: "Payment processing and history APIs"
+
+        # Notification routes
+        - id: notifications
+          uri: ${MONOLITH_URL:http://localhost:8080}
+          predicates:
+            - Path=/api/notifications/**
+          filters:
+            - StripPrefix=0
+          metadata:
+            feature-flag: ff-notification-service
+            target-service: notification-service
+            description: "Notification management APIs"
+
+        # Student Progress routes
+        - id: progress
+          uri: ${MONOLITH_URL:http://localhost:8080}
+          predicates:
+            - Path=/api/progress/**
+          filters:
+            - StripPrefix=0
+          metadata:
+            feature-flag: ff-progress-service
+            target-service: progress-service
+            description: "Student progress tracking APIs"
+
+        # Monolith fallback — catches all remaining traffic (JSP pages, static resources, etc.)
+        - id: monolith-fallback
+          uri: ${MONOLITH_URL:http://localhost:8080}
+          predicates:
+            - Path=/**
+          filters:
+            - StripPrefix=0
+          metadata:
+            description: "Fallback route to monolith for JSP pages and unmatched paths"
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway
+  endpoint:
+    gateway:
+      enabled: true
+
+server:
+  port: 8090
+
+logging:
+  level:
+    org.springframework.cloud.gateway: INFO
+    com.eduverse.gateway: DEBUG
