@@ -1,0 +1,10 @@
+C:\code\gbb\labs\appmodlab-monolith-to-microservices-with-agents\course-catalog-service\src\main\java\com\eduverse\catalog\controller\CourseCatalogController.java
+C:\code\gbb\labs\appmodlab-monolith-to-microservices-with-agents\course-catalog-service\src\main\java\com\eduverse\catalog\service\CourseCatalogService.java
+C:\code\gbb\labs\appmodlab-monolith-to-microservices-with-agents\course-catalog-service\src\main\java\com\eduverse\catalog\model\Course.java
+C:\code\gbb\labs\appmodlab-monolith-to-microservices-with-agents\course-catalog-service\src\main\java\com\eduverse\catalog\repository\ModuleRepository.java
+C:\code\gbb\labs\appmodlab-monolith-to-microservices-with-agents\course-catalog-service\src\main\java\com\eduverse\catalog\repository\LessonRepository.java
+C:\code\gbb\labs\appmodlab-monolith-to-microservices-with-agents\course-catalog-service\src\main\java\com\eduverse\catalog\config\ServiceBusPublisherConfig.java
+C:\code\gbb\labs\appmodlab-monolith-to-microservices-with-agents\course-catalog-service\src\main\java\com\eduverse\catalog\model\Lesson.java
+C:\code\gbb\labs\appmodlab-monolith-to-microservices-with-agents\course-catalog-service\src\main\java\com\eduverse\catalog\model\Module.java
+C:\code\gbb\labs\appmodlab-monolith-to-microservices-with-agents\course-catalog-service\src\main\java\com\eduverse\catalog\CourseCatalogApplication.java
+C:\code\gbb\labs\appmodlab-monolith-to-microservices-with-agents\course-catalog-service\src\main\java\com\eduverse\catalog\repository\CourseRepository.java

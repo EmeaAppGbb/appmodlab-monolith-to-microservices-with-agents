@@ -1,0 +1,3 @@
+com\eduverse\payment\EnrollmentPaymentSagaTest.class
+com\eduverse\payment\PaymentServiceTest.class
+com\eduverse\payment\PaymentControllerTest.class

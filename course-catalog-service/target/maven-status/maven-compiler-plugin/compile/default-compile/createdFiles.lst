@@ -1,0 +1,13 @@
+com\eduverse\catalog\model\Lesson$ContentType.class
+com\eduverse\catalog\service\CourseCatalogService.class
+com\eduverse\catalog\model\Module.class
+com\eduverse\catalog\service\CourseCatalogService$CourseNotFoundException.class
+com\eduverse\catalog\repository\LessonRepository.class
+com\eduverse\catalog\config\ServiceBusPublisherConfig.class
+com\eduverse\catalog\model\Course.class
+com\eduverse\catalog\CourseCatalogApplication.class
+com\eduverse\catalog\repository\ModuleRepository.class
+com\eduverse\catalog\model\Course$Status.class
+com\eduverse\catalog\model\Lesson.class
+com\eduverse\catalog\repository\CourseRepository.class
+com\eduverse\catalog\controller\CourseCatalogController.class

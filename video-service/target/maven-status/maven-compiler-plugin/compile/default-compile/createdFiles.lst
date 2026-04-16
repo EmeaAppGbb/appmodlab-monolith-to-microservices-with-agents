@@ -1,0 +1,10 @@
+com\eduverse\video\config\ServiceBusConfig.class
+com\eduverse\video\model\Video$Status.class
+com\eduverse\video\service\VideoService.class
+com\eduverse\video\messaging\ServiceBusEventPublisher.class
+com\eduverse\video\VideoServiceApplication.class
+com\eduverse\video\model\Video.class
+com\eduverse\video\controller\VideoController.class
+com\eduverse\video\controller\VideoController$UploadVideoRequest.class
+com\eduverse\video\storage\MockBlobStorageClient.class
+com\eduverse\video\repository\VideoRepository.class

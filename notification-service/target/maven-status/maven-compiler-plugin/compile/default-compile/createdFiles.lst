@@ -1,0 +1,13 @@
+com\eduverse\notification\repository\NotificationRepository.class
+com\eduverse\notification\service\NotificationService.class
+com\eduverse\notification\controller\NotificationController$SendEmailRequest.class
+com\eduverse\notification\model\Notification$Status.class
+com\eduverse\notification\model\NotificationEvent$Builder.class
+com\eduverse\notification\NotificationServiceApplication.class
+com\eduverse\notification\model\Notification.class
+com\eduverse\notification\model\Notification$Type.class
+com\eduverse\notification\controller\NotificationController.class
+com\eduverse\notification\model\NotificationTemplate.class
+com\eduverse\notification\model\NotificationEvent.class
+com\eduverse\notification\config\ServiceBusConfig.class
+com\eduverse\notification\listener\ServiceBusEventListener.class

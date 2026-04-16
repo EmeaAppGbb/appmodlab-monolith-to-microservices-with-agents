@@ -1,0 +1,8 @@
+C:\code\gbb\labs\appmodlab-monolith-to-microservices-with-agents\video-service\src\main\java\com\eduverse\video\storage\MockBlobStorageClient.java
+C:\code\gbb\labs\appmodlab-monolith-to-microservices-with-agents\video-service\src\main\java\com\eduverse\video\messaging\ServiceBusEventPublisher.java
+C:\code\gbb\labs\appmodlab-monolith-to-microservices-with-agents\video-service\src\main\java\com\eduverse\video\VideoServiceApplication.java
+C:\code\gbb\labs\appmodlab-monolith-to-microservices-with-agents\video-service\src\main\java\com\eduverse\video\repository\VideoRepository.java
+C:\code\gbb\labs\appmodlab-monolith-to-microservices-with-agents\video-service\src\main\java\com\eduverse\video\config\ServiceBusConfig.java
+C:\code\gbb\labs\appmodlab-monolith-to-microservices-with-agents\video-service\src\main\java\com\eduverse\video\model\Video.java
+C:\code\gbb\labs\appmodlab-monolith-to-microservices-with-agents\video-service\src\main\java\com\eduverse\video\controller\VideoController.java
+C:\code\gbb\labs\appmodlab-monolith-to-microservices-with-agents\video-service\src\main\java\com\eduverse\video\service\VideoService.java

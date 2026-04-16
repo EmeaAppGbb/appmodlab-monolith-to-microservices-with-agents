@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: com.eduverse.progress.ProgressServiceTest
+-------------------------------------------------------------------------------
+Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.270 s -- in com.eduverse.progress.ProgressServiceTest

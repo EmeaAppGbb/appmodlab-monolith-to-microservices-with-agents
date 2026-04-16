@@ -1,0 +1,57 @@
+spring:
+  application:
+    name: progress-service
+
+  # Database — own PostgreSQL database (Database-per-Service pattern)
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5439/progress}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:db/schema.sql
+      data-locations: classpath:db/data.sql
+
+  # Azure Service Bus (disabled by default for local dev)
+  cloud:
+    azure:
+      servicebus:
+        connection-string: ${SERVICEBUS_CONNECTION_STRING:}
+        processor:
+          enrollment-activated:
+            entity-name: enrollment-activated
+            entity-type: topic
+            subscription-name: progress-service
+          assessment-passed:
+            entity-name: assessment-passed
+            entity-type: topic
+            subscription-name: progress-service
+
+server:
+  port: ${SERVER_PORT:8091}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when-authorized
+
+logging:
+  level:
+    com.eduverse.progress: DEBUG
+    com.azure.spring: INFO

@@ -1,0 +1,13 @@
+com\eduverse\assessment\controller\AssessmentController$CreateAssessmentRequest.class
+com\eduverse\assessment\repository\StudentAnswerRepository.class
+com\eduverse\assessment\model\Assessment.class
+com\eduverse\assessment\repository\AssessmentRepository.class
+com\eduverse\assessment\model\StudentAnswer.class
+com\eduverse\assessment\messaging\ServiceBusEventPublisher.class
+com\eduverse\assessment\config\ServiceBusConfig.class
+com\eduverse\assessment\service\AssessmentService.class
+com\eduverse\assessment\controller\AssessmentController$UpdateAssessmentRequest.class
+com\eduverse\assessment\AssessmentServiceApplication.class
+com\eduverse\assessment\controller\AssessmentController.class
+com\eduverse\assessment\model\Assessment$Type.class
+com\eduverse\assessment\controller\AssessmentController$SubmitAnswersRequest.class

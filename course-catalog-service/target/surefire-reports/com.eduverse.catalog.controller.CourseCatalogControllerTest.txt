@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: com.eduverse.catalog.controller.CourseCatalogControllerTest
+-------------------------------------------------------------------------------
+Tests run: 14, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.250 s -- in com.eduverse.catalog.controller.CourseCatalogControllerTest
