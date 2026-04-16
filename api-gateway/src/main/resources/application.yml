@@ -72,9 +72,9 @@ spring:
             target-service: certificate-service
             description: "Certificate generation and download APIs"
 
-        # Payment routes
+        # Payment routes — Strangler Fig: routed to extracted payment-service
         - id: payments
-          uri: ${MONOLITH_URL:http://localhost:8080}
+          uri: ${PAYMENT_SERVICE_URL:http://localhost:8086}
           predicates:
             - Path=/api/payments/**
           filters:
@@ -82,7 +82,7 @@ spring:
           metadata:
             feature-flag: ff-payment-service
             target-service: payment-service
-            description: "Payment processing and history APIs"
+            description: "Payment processing and history APIs (extracted microservice)"
 
         # Notification routes — Strangler Fig: routed to extracted notification-service
         - id: notifications

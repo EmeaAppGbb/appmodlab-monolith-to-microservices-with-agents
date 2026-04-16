@@ -29,6 +29,7 @@ services:
       MONOLITH_URL: http://eduverse-app:8080
       NOTIFICATION_SERVICE_URL: http://eduverse-notification-service:8084
       COURSE_CATALOG_SERVICE_URL: http://eduverse-course-catalog-service:8085
+      PAYMENT_SERVICE_URL: http://eduverse-payment-service:8086
       SPRING_PROFILES_ACTIVE: docker
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8090/actuator/health || exit 1"]
@@ -137,6 +138,54 @@ services:
     networks:
       - eduverse-net
 
+  # ---------- Payment Service Database ----------
+  payment-db:
+    image: postgres:14
+    container_name: eduverse-payment-db
+    environment:
+      POSTGRES_DB: payments
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5435:5432"
+    volumes:
+      - payment-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d payments"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - eduverse-net
+
+  # ---------- Payment Service (Strangler Fig — Phase 6) ----------
+  payment-service:
+    build:
+      context: ../payment-service
+      dockerfile: Dockerfile
+    container_name: eduverse-payment-service
+    depends_on:
+      payment-db:
+        condition: service_healthy
+    ports:
+      - "8086:8086"
+    environment:
+      DB_URL: jdbc:postgresql://payment-db:5432/payments
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      SERVICEBUS_CONNECTION_STRING: ${SERVICEBUS_CONNECTION_STRING:-}
+      SERVER_PORT: 8086
+      SPRING_PROFILES_ACTIVE: docker
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8086/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - eduverse-net
+
 volumes:
   notification-pgdata:
   course-catalog-pgdata:
+  payment-pgdata:
