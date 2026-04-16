@@ -1,0 +1,16 @@
+com\eduverse\events\VideoReadyEvent.class
+com\eduverse\events\ReminderNeededEvent.class
+com\eduverse\events\Topics.class
+com\eduverse\events\EnrollmentCompletedEvent.class
+com\eduverse\events\EventSerializer.class
+com\eduverse\events\PaymentCompletedEvent.class
+com\eduverse\events\LessonCompletedEvent.class
+com\eduverse\events\PaymentFailedEvent.class
+com\eduverse\events\DomainEvent.class
+com\eduverse\events\EnrollmentActivatedEvent.class
+com\eduverse\events\PaymentRefundedEvent.class
+com\eduverse\events\ProgressUpdatedEvent.class
+com\eduverse\events\StudentEnrolledEvent.class
+com\eduverse\events\AssessmentPassedEvent.class
+com\eduverse\events\CoursePublishedEvent.class
+com\eduverse\events\CertificateIssuedEvent.class

@@ -1,0 +1,16 @@
+C:\code\gbb\labs\appmodlab-monolith-to-microservices-with-agents\shared-events\src\main\java\com\eduverse\events\AssessmentPassedEvent.java
+C:\code\gbb\labs\appmodlab-monolith-to-microservices-with-agents\shared-events\src\main\java\com\eduverse\events\CertificateIssuedEvent.java
+C:\code\gbb\labs\appmodlab-monolith-to-microservices-with-agents\shared-events\src\main\java\com\eduverse\events\CoursePublishedEvent.java
+C:\code\gbb\labs\appmodlab-monolith-to-microservices-with-agents\shared-events\src\main\java\com\eduverse\events\DomainEvent.java
+C:\code\gbb\labs\appmodlab-monolith-to-microservices-with-agents\shared-events\src\main\java\com\eduverse\events\EnrollmentActivatedEvent.java
+C:\code\gbb\labs\appmodlab-monolith-to-microservices-with-agents\shared-events\src\main\java\com\eduverse\events\EnrollmentCompletedEvent.java
+C:\code\gbb\labs\appmodlab-monolith-to-microservices-with-agents\shared-events\src\main\java\com\eduverse\events\EventSerializer.java
+C:\code\gbb\labs\appmodlab-monolith-to-microservices-with-agents\shared-events\src\main\java\com\eduverse\events\LessonCompletedEvent.java
+C:\code\gbb\labs\appmodlab-monolith-to-microservices-with-agents\shared-events\src\main\java\com\eduverse\events\PaymentCompletedEvent.java
+C:\code\gbb\labs\appmodlab-monolith-to-microservices-with-agents\shared-events\src\main\java\com\eduverse\events\PaymentFailedEvent.java
+C:\code\gbb\labs\appmodlab-monolith-to-microservices-with-agents\shared-events\src\main\java\com\eduverse\events\PaymentRefundedEvent.java
+C:\code\gbb\labs\appmodlab-monolith-to-microservices-with-agents\shared-events\src\main\java\com\eduverse\events\ProgressUpdatedEvent.java
+C:\code\gbb\labs\appmodlab-monolith-to-microservices-with-agents\shared-events\src\main\java\com\eduverse\events\ReminderNeededEvent.java
+C:\code\gbb\labs\appmodlab-monolith-to-microservices-with-agents\shared-events\src\main\java\com\eduverse\events\StudentEnrolledEvent.java
+C:\code\gbb\labs\appmodlab-monolith-to-microservices-with-agents\shared-events\src\main\java\com\eduverse\events\Topics.java
+C:\code\gbb\labs\appmodlab-monolith-to-microservices-with-agents\shared-events\src\main\java\com\eduverse\events\VideoReadyEvent.java
