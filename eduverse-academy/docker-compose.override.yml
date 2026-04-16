@@ -28,6 +28,7 @@ services:
     environment:
       MONOLITH_URL: http://eduverse-app:8080
       NOTIFICATION_SERVICE_URL: http://eduverse-notification-service:8084
+      COURSE_CATALOG_SERVICE_URL: http://eduverse-course-catalog-service:8085
       SPRING_PROFILES_ACTIVE: docker
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8090/actuator/health || exit 1"]
@@ -89,5 +90,53 @@ services:
     networks:
       - eduverse-net
 
+  # ---------- Course Catalog Service Database ----------
+  course-catalog-db:
+    image: postgres:14
+    container_name: eduverse-course-catalog-db
+    environment:
+      POSTGRES_DB: coursecatalog
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5434:5432"
+    volumes:
+      - course-catalog-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d coursecatalog"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - eduverse-net
+
+  # ---------- Course Catalog Service (Strangler Fig — Phase 4) ----------
+  course-catalog-service:
+    build:
+      context: ../course-catalog-service
+      dockerfile: Dockerfile
+    container_name: eduverse-course-catalog-service
+    depends_on:
+      course-catalog-db:
+        condition: service_healthy
+    ports:
+      - "8085:8085"
+    environment:
+      DB_URL: jdbc:postgresql://course-catalog-db:5432/coursecatalog
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      SERVICEBUS_CONNECTION_STRING: ${SERVICEBUS_CONNECTION_STRING:-}
+      SERVER_PORT: 8085
+      SPRING_PROFILES_ACTIVE: docker
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8085/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - eduverse-net
+
 volumes:
   notification-pgdata:
+  course-catalog-pgdata:

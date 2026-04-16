@@ -12,9 +12,9 @@ spring:
             allowedMethods: "*"
             allowedHeaders: "*"
       routes:
-        # Course Catalog routes
+        # Course Catalog routes — Strangler Fig: routed to extracted course-catalog-service
         - id: courses
-          uri: ${MONOLITH_URL:http://localhost:8080}
+          uri: ${COURSE_CATALOG_SERVICE_URL:http://localhost:8085}
           predicates:
             - Path=/api/courses/**
           filters:
@@ -22,7 +22,7 @@ spring:
           metadata:
             feature-flag: ff-course-catalog
             target-service: course-catalog-service
-            description: "Course catalog and management APIs"
+            description: "Course catalog and management APIs (extracted microservice)"
 
         # Enrollment routes
         - id: enrollments
