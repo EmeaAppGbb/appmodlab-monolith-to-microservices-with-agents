@@ -11,7 +11,7 @@ modernizationTools: []
 agenticTools: ["Spec2Cloud", "SQUAD"]
 tags: ["microservices", "strangler-fig", "bounded-context", "saga-pattern", "spring-boot"]
 extensions: ["github.copilot"]
-thumbnail: ""
+thumbnail: "https://raw.githubusercontent.com/EmeaAppGbb/appmodlab-monolith-to-microservices-with-agents/main/assets/thumbnail-gpt-image.png"
 video: ""
 version: "1.0.0"
 ---
